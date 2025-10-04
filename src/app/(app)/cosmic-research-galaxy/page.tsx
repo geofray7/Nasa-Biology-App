@@ -3,9 +3,9 @@
 
 import { useState, useEffect } from 'react';
 import { getResearchPapers, type ResearchPapersOutput } from '@/ai/flows/get-research-papers';
-import ResearchGalaxy from './galaxy';
+import AdvancedResearchGalaxy from './galaxy';
 import { Input } from '@/components/ui/input';
-import { Card } from '@/components/ui/card';
+import { Card, CardHeader } from '@/components/ui/card';
 
 export default function CosmicResearchGalaxyPage() {
   const [data, setData] = useState<ResearchPapersOutput>({ nodes: [], links: [] });
@@ -22,24 +22,26 @@ export default function CosmicResearchGalaxyPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <p>Loading Research Galaxy...</p>
+        <div className="text-center space-y-4">
+          <div className="text-4xl animate-spin">🌌</div>
+          <p className="text-muted-foreground">Loading Research Galaxy...</p>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="space-y-4">
-       <h1 className="text-2xl font-headline font-bold">Cosmic Research Galaxy</h1>
       <Card>
-        <div className="p-4 border-b">
+        <CardHeader>
           <Input 
-            placeholder="Search for papers..."
+            placeholder="Search for papers by title or keyword..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
-        </div>
-        <ResearchGalaxy papers={data.nodes} searchQuery={searchQuery} />
+        </CardHeader>
       </Card>
+      <AdvancedResearchGalaxy papers={data.nodes} searchQuery={searchQuery} />
     </div>
   );
 }
