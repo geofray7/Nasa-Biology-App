@@ -21,11 +21,11 @@ export default function AiResearchCopilotPage() {
 
   useEffect(() => {
     setMessages([
-        {
-          role: 'assistant',
-          text: `Hello! As a NASA space expert, I'm ready to share fascinating insights and factual information about space, astronomy, and the groundbreaking work of NASA. Our agency is dedicated to pioneering the future in space exploration, scientific discovery, and aeronautics research, constantly pushing the boundaries of human knowledge from understanding our home planet to exploring distant galaxies. I'm here to answer any specific questions you might have about our missions, discoveries, or the cosmos itself. What would you like to explore today?`,
-        },
-      ]);
+      {
+        role: 'assistant',
+        text: `Hello! As a NASA space expert, I'm ready to share fascinating insights and factual information about space, astronomy, and the groundbreaking work of NASA. Our agency is dedicated to pioneering the future in space exploration, scientific discovery, and aeronautics research, constantly pushing the boundaries of human knowledge from understanding our home planet to exploring distant galaxies. I'm here to answer any specific questions you might have about our missions, discoveries, or the cosmos itself. What would you like to explore today?`,
+      },
+    ]);
   }, []);
 
   const scrollToBottom = () => {
@@ -55,7 +55,6 @@ export default function AiResearchCopilotPage() {
     setMessages(prev => [...prev, userMessage]);
     setInputValue('');
     setIsTyping(true);
-    scrollToBottom();
 
     try {
       const response = await aiResearchCoPilot({ query: trimmedInput });
@@ -73,7 +72,6 @@ export default function AiResearchCopilotPage() {
       setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsTyping(false);
-      scrollToBottom();
     }
   };
   
@@ -84,13 +82,13 @@ export default function AiResearchCopilotPage() {
   
   return (
     <div className="h-full flex flex-col">
-        <Card className="flex flex-col h-full w-full max-w-4xl mx-auto">
+        <Card className="flex flex-col flex-1 w-full max-w-4xl mx-auto">
             <CardHeader>
                 <CardTitle>AI Research Co-Pilot</CardTitle>
                 <CardDescription>Your intelligent assistant for all things NASA and space-related.</CardDescription>
             </CardHeader>
             <CardContent className="flex-1 p-0 flex flex-col">
-                <ScrollArea className="flex-1 p-6" viewportRef={scrollAreaRef}>
+                <ScrollArea className="flex-grow p-6" viewportRef={scrollAreaRef}>
                     <div className="space-y-6">
                         {messages.map((msg, index) => (
                             <div
