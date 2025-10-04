@@ -115,7 +115,7 @@ const AstronautHealthDashboard = () => {
       {/* Header */}
       <div className="text-center">
         <h1 className="text-3xl font-bold font-headline mb-2">Astronaut Health Dashboard</h1>
-        <p className="text-muted-foreground">Real-time health monitoring and mission risk assessment</p>
+        <p className="text-muted-foreground">Real-time health monitoring for <span className="font-semibold text-accent">Dr. Reed</span></p>
       </div>
 
       {/* Mission Controls */}
@@ -364,5 +364,3 @@ const AstronautHealthDashboard = () => {
 };
 
 export default AstronautHealthDashboard;
-
-    
