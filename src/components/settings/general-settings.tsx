@@ -52,27 +52,33 @@ export const GeneralSettings = ({ settings, onChange }: GeneralSettingsProps) =>
 
       <div className="setting-item">
         <label className="toggle-label">
-          <span className="toggle-slider"></span>
-          <input 
-            type="checkbox" 
-            className="hidden"
-            checked={settings.autoSave}
-            onChange={(e) => onChange({...settings, autoSave: e.target.checked})}
-          />
           <span>Auto-save conversations</span>
+          <div className="relative">
+            <input 
+              type="checkbox" 
+              className="hidden"
+              id="autoSave"
+              checked={settings.autoSave}
+              onChange={(e) => onChange({...settings, autoSave: e.target.checked})}
+            />
+            <label htmlFor="autoSave" className="toggle-slider"></label>
+          </div>
         </label>
       </div>
 
       <div className="setting-item">
         <label className="toggle-label">
-          <span className="toggle-slider"></span>
-          <input 
-            type="checkbox" 
-            className="hidden"
-            checked={settings.typingIndicator}
-            onChange={(e) => onChange({...settings, typingIndicator: e.target.checked})}
-          />
           <span>Show typing indicators</span>
+          <div className="relative">
+            <input 
+              type="checkbox" 
+              className="hidden"
+              id="typingIndicator"
+              checked={settings.typingIndicator}
+              onChange={(e) => onChange({...settings, typingIndicator: e.target.checked})}
+            />
+            <label htmlFor="typingIndicator" className="toggle-slider"></label>
+          </div>
         </label>
       </div>
     </div>

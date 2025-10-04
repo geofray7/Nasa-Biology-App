@@ -14,27 +14,33 @@ export const NotificationSettings = ({ settings, onChange }: NotificationSetting
 
       <div className="setting-item">
         <label className="toggle-label">
-          <span className="toggle-slider"></span>
-          <input 
-            type="checkbox" 
-            className="hidden"
-            checked={settings.desktopNotifications}
-            onChange={(e) => onChange({...settings, desktopNotifications: e.target.checked})}
-          />
           <span>Desktop notifications</span>
+          <div className="relative">
+            <input 
+              type="checkbox" 
+              className="hidden"
+              id="desktopNotifications"
+              checked={settings.desktopNotifications}
+              onChange={(e) => onChange({...settings, desktopNotifications: e.target.checked})}
+            />
+            <label htmlFor="desktopNotifications" className="toggle-slider"></label>
+          </div>
         </label>
       </div>
 
       <div className="setting-item">
         <label className="toggle-label">
-          <span className="toggle-slider"></span>
-          <input 
-            type="checkbox" 
-            className="hidden"
-            checked={settings.soundNotifications}
-            onChange={(e) => onChange({...settings, soundNotifications: e.target.checked})}
-          />
           <span>Sound notifications</span>
+          <div className="relative">
+            <input 
+              type="checkbox" 
+              className="hidden"
+              id="soundNotifications"
+              checked={settings.soundNotifications}
+              onChange={(e) => onChange({...settings, soundNotifications: e.target.checked})}
+            />
+            <label htmlFor="soundNotifications" className="toggle-slider"></label>
+          </div>
         </label>
       </div>
 
