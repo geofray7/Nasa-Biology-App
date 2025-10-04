@@ -23,7 +23,7 @@ export default function AiResearchCopilotPage() {
     setMessages([
         {
           role: 'assistant',
-          text: `<strong>Welcome to NASA AI Copilot!</strong><br/><br/>I'm your intelligent assistant for all things NASA and space-related. I can answer questions about:<br/><br/>• Space missions and exploration<br/>• Astronomy and astrophysics<br/>• Rocket science and technology<br/>• Planetary science<br/>• NASA history and future plans<br/>• Space research and discoveries<br/><br/>Ask me anything - I'll do my best to provide comprehensive, accurate information!`,
+          text: `Hello! As a NASA space expert, I'm ready to share fascinating insights and factual information about space, astronomy, and the groundbreaking work of NASA. Our agency is dedicated to pioneering the future in space exploration, scientific discovery, and aeronautics research, constantly pushing the boundaries of human knowledge from understanding our home planet to exploring distant galaxies. I'm here to answer any specific questions you might have about our missions, discoveries, or the cosmos itself. What would you like to explore today?`,
         },
       ]);
   }, []);
@@ -36,7 +36,7 @@ export default function AiResearchCopilotPage() {
             if (viewport) {
                 viewport.scrollTop = viewport.scrollHeight;
             }
-        }, 0);
+        }, 100);
     }
   };
 
@@ -55,6 +55,7 @@ export default function AiResearchCopilotPage() {
     setMessages(prev => [...prev, userMessage]);
     setInputValue('');
     setIsTyping(true);
+    scrollToBottom();
 
     try {
       const response = await aiResearchCoPilot({ query: trimmedInput });
@@ -72,15 +73,21 @@ export default function AiResearchCopilotPage() {
       setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsTyping(false);
+      scrollToBottom();
     }
+  };
+  
+  const formatText = (text: string) => {
+    const bolded = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    return bolded.replace(/\n/g, '<br />');
   };
   
   return (
     <div className="h-full flex flex-col">
-        <Card className="flex flex-col h-full">
-            <CardHeader className="bg-primary/10">
-                <CardTitle>Space Exploration Assistant</CardTitle>
-                <CardDescription>Ask me anything about NASA missions, astronomy, and space science</CardDescription>
+        <Card className="flex flex-col h-full w-full max-w-4xl mx-auto">
+            <CardHeader>
+                <CardTitle>AI Research Co-Pilot</CardTitle>
+                <CardDescription>Your intelligent assistant for all things NASA and space-related.</CardDescription>
             </CardHeader>
             <CardContent className="flex-1 p-0 flex flex-col">
                 <ScrollArea className="flex-1 p-6" viewportRef={scrollAreaRef}>
@@ -106,7 +113,7 @@ export default function AiResearchCopilotPage() {
                                     : 'bg-muted rounded-bl-none'
                                 )}
                             >
-                                <div className="text-sm leading-relaxed whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: msg.text.replace(/\n/g, '<br />') }} />
+                                <div className="text-sm leading-relaxed whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: formatText(msg.text) }} />
                             </div>
                             {msg.role === 'user' && (
                                 <div className="flex-shrink-0 w-10 h-10 rounded-full bg-secondary flex items-center justify-center">
