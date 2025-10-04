@@ -32,18 +32,19 @@ function ChatMessages({
   lastQuery: string;
 }) {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const viewportRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollTo({
-        top: scrollAreaRef.current.scrollHeight,
+    if (viewportRef.current) {
+      viewportRef.current.scrollTo({
+        top: viewportRef.current.scrollHeight,
         behavior: 'smooth',
       });
     }
   }, [messages, isPending]);
 
   return (
-    <ScrollArea className="flex-1" ref={scrollAreaRef}>
+    <ScrollArea className="flex-1" viewportRef={viewportRef}>
       <div className="p-4 space-y-6">
         {messages.length === 0 && !isPending && (
           <div className="text-center text-muted-foreground flex flex-col items-center gap-4 py-16">
@@ -159,42 +160,58 @@ export function ChatInterface() {
 
   useEffect(() => {
     // This effect runs when the server action completes
-    if (!pending && state.query) {
-      const userMessageExists = messages.some(
-        (m) => m.role === 'user' && m.content === state.query
-      );
+    if (!pending && state.query && (state.answer || state.error)) {
+      setMessages((prev) => {
+        const newMessages: Message[] = [...prev];
+        const userMessageExists = newMessages.some(
+          (m) => m.role === 'user' && m.content === state.query
+        );
 
-      // Add user message if it wasn't the one that initiated the pending state
-      if (!userMessageExists) {
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: `user-${Date.now()}`,
-            role: 'user',
-            content: state.query,
-          },
-        ]);
-      }
-      // Add assistant response
-      setMessages((prev) => [
-        ...prev,
-        {
+        if (!userMessageExists) {
+            newMessages.push({
+              id: `user-${Date.now()}`,
+              role: 'user',
+              content: state.query,
+            });
+        }
+        
+        newMessages.push({
           id: `assistant-${Date.now()}`,
           role: 'assistant',
           content: state.answer || `Error: ${state.error!}`,
-        },
-      ]);
+        });
+        return newMessages;
+      });
 
       formRef.current?.reset();
       setLastQuery('');
     }
-  }, [state, pending, messages]);
+  }, [state, pending]);
 
   const handleAction = (formData: FormData) => {
     const query = formData.get('query') as string;
     setLastQuery(query);
+    setMessages((prev) => [
+        ...prev,
+        {
+            id: `user-interim-${Date.now()}`,
+            role: 'user',
+            content: query
+        }
+    ]);
     formAction(formData);
   };
+  
+  const displayMessages = messages.filter(m => {
+      if (m.role === 'user' && pending) {
+          return m.content !== lastQuery;
+      }
+      if (m.id.startsWith('user-interim-')) {
+          return false;
+      }
+      return true;
+  });
+
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
@@ -204,7 +221,7 @@ export function ChatInterface() {
         className="flex flex-1 flex-col overflow-hidden"
       >
         <ChatMessages
-          messages={messages}
+          messages={displayMessages}
           isPending={pending}
           lastQuery={lastQuery}
         />
