@@ -1,0 +1,57 @@
+/**
+ * @file Firestore Security Rules for Planet Comparator
+ * @description This ruleset provides open read access (get, list) for all data,
+ * and disables all write access (create, update, delete).
+ *
+ * Core Philosophy:
+ *   This ruleset provides open read access to all the planet data. Write access is completely disabled.
+ *
+ * Data Structure:
+ *   The database consists of three top-level collections: `/planets/{planetId}`, `/missions/{missionId}`,
+ *   and `/real_time_data/{planetId}`.
+ *
+ * Key Security Decisions:
+ *   - Public Read Access: All collections are publicly readable to allow for a seamless user experience.
+ *   - Write Access Disabled: All write operations are denied to prevent unauthorized data modification.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * @description Allows anyone to read planet data. Disallows all writes.
+     * @path /planets/{planetId}
+     * @allow (get, list) Anyone can read planet data.
+     * @deny (create, update, delete) No one can create, update, or delete planet data.
+     * @principle Grants public read access while strictly prohibiting any write operations.
+     */
+    match /planets/{planetId} {
+      allow get, list: if true;
+      allow create, update, delete: if false;
+    }
+
+    /**
+     * @description Allows anyone to read mission data. Disallows all writes.
+     * @path /missions/{missionId}
+     * @allow (get, list) Anyone can read mission data.
+     * @deny (create, update, delete) No one can create, update, or delete mission data.
+     * @principle Grants public read access while strictly prohibiting any write operations.
+     */
+    match /missions/{missionId} {
+      allow get, list: if true;
+      allow create, update, delete: if false;
+    }
+
+    /**
+     * @description Allows anyone to read real-time data. Disallows all writes.
+     * @path /real_time_data/{planetId}
+     * @allow (get, list) Anyone can read real-time data.
+     * @deny (create, update, delete) No one can create, update, or delete real-time data.
+     * @principle Grants public read access while strictly prohibiting any write operations.
+     */
+    match /real_time_data/{planetId} {
+      allow get, list: if true;
+      allow create, update, delete: if false;
+    }
+  }
+}

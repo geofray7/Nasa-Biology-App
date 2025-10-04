@@ -1,0 +1,294 @@
+{
+  "entities": {
+    "Planet": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Planet",
+      "type": "object",
+      "description": "Represents a planet with its properties and characteristics.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the planet."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the planet."
+        },
+        "type": {
+          "type": "string",
+          "description": "Type of the planet (e.g., terrestrial, gas giant)."
+        },
+        "massEarth": {
+          "type": "number",
+          "description": "Mass of the planet relative to Earth."
+        },
+        "diameterKm": {
+          "type": "number",
+          "description": "Diameter of the planet in kilometers."
+        },
+        "gravityMs2": {
+          "type": "number",
+          "description": "Surface gravity of the planet in meters per second squared."
+        },
+        "surfaceTempMin": {
+          "type": "number",
+          "description": "Minimum surface temperature of the planet in Celsius."
+        },
+        "surfaceTempMax": {
+          "type": "number",
+          "description": "Maximum surface temperature of the planet in Celsius."
+        },
+        "orbitalPeriodDays": {
+          "type": "number",
+          "description": "Orbital period of the planet in days."
+        },
+        "dayLengthHours": {
+          "type": "number",
+          "description": "Length of a day on the planet in hours."
+        },
+        "distanceFromSunAu": {
+          "type": "number",
+          "description": "Distance of the planet from the Sun in astronomical units."
+        },
+        "atmosphericComposition": {
+          "type": "array",
+          "description": "Composition of the planet's atmosphere.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "moons": {
+          "type": "number",
+          "description": "Number of moons orbiting the planet."
+        },
+        "magneticField": {
+          "type": "boolean",
+          "description": "Indicates whether the planet has a magnetic field."
+        },
+        "radiationLevel": {
+          "type": "string",
+          "description": "Radiation level on the planet (e.g., low, moderate, high, extreme)."
+        },
+        "waterPresence": {
+          "type": "string",
+          "description": "Indicates the presence of water on the planet (e.g., subsurface ice)."
+        },
+        "habitabilityScore": {
+          "type": "number",
+          "description": "Habitability score of the planet on a 0-1 scale."
+        },
+        "nasaMissions": {
+          "type": "array",
+          "description": "References to missions. (Relationship: Planet 1:N Mission)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "discoveryYear": {
+          "type": "number",
+          "description": "Year when the planet was discovered."
+        },
+        "lastMissionUpdate": {
+          "type": "string",
+          "description": "Date of the last mission update.",
+          "format": "date-time"
+        },
+        "images": {
+          "type": "array",
+          "description": "Links to images associated with the planet.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "scientificHighlights": {
+          "type": "array",
+          "description": "Scientific highlights of the planet.",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "type"
+      ]
+    },
+    "Mission": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Mission",
+      "type": "object",
+      "description": "Represents a NASA mission to a planet.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the mission."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the mission."
+        },
+        "targetPlanet": {
+          "type": "string",
+          "description": "Reference to Planet. (Relationship: Planet 1:N Mission)"
+        },
+        "launchDate": {
+          "type": "string",
+          "description": "Date when the mission was launched.",
+          "format": "date-time"
+        },
+        "arrivalDate": {
+          "type": "string",
+          "description": "Date when the mission arrived at the target planet.",
+          "format": "date-time"
+        },
+        "status": {
+          "type": "string",
+          "description": "Status of the mission (e.g., active, completed)."
+        },
+        "objectives": {
+          "type": "array",
+          "description": "Objectives of the mission.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "instruments": {
+          "type": "array",
+          "description": "Instruments used in the mission.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "latestFindings": {
+          "type": "string",
+          "description": "Latest findings from the mission."
+        },
+        "nextActivities": {
+          "type": "string",
+          "description": "Next activities planned for the mission."
+        },
+        "nasaWebsite": {
+          "type": "string",
+          "description": "URL of the NASA website for the mission.",
+          "format": "uri"
+        },
+        "liveDataUrl": {
+          "type": "string",
+          "description": "URL for live data from the mission.",
+          "format": "uri"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "targetPlanet"
+      ]
+    },
+    "RealTimeData": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "RealTimeData",
+      "type": "object",
+      "description": "Represents real-time data for a planet.",
+      "properties": {
+        "planetId": {
+          "type": "string",
+          "description": "Reference to Planet. (Relationship: Planet 1:1 RealTimeData)"
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "Timestamp of the data.",
+          "format": "date-time"
+        },
+        "weather": {
+          "type": "array",
+          "description": "Weather conditions on the planet.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "orbitalPosition": {
+          "type": "array",
+          "description": "Orbital position of the planet.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "activeMissions": {
+          "type": "array",
+          "description": "References to active missions. (Relationship: Mission N:N RealTimeData)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "solarActivity": {
+          "type": "string",
+          "description": "Solar activity level."
+        }
+      },
+      "required": [
+        "planetId",
+        "timestamp"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/planets/{planetId}",
+        "definition": {
+          "entityName": "Planet",
+          "schema": {
+            "$ref": "#/backend/entities/Planet"
+          },
+          "description": "Stores planet data. No authentication needed for get or list. Ensures QAPs.",
+          "params": [
+            {
+              "name": "planetId",
+              "description": "The unique identifier of the planet."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/missions/{missionId}",
+        "definition": {
+          "entityName": "Mission",
+          "schema": {
+            "$ref": "#/backend/entities/Mission"
+          },
+          "description": "Stores mission data. No authentication needed for get or list. Ensures QAPs.",
+          "params": [
+            {
+              "name": "missionId",
+              "description": "The unique identifier of the mission."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/real_time_data/{planetId}",
+        "definition": {
+          "entityName": "RealTimeData",
+          "schema": {
+            "$ref": "#/backend/entities/RealTimeData"
+          },
+          "description": "Stores real-time data for planets.  No authentication needed for get or list. Ensures QAPs.",
+          "params": [
+            {
+              "name": "planetId",
+              "description": "The unique identifier of the planet."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The data structure prioritizes clear segregation and avoids hierarchical `get()` calls for authorization. This is achieved through structural segregation and, where necessary, denormalization.\n\n*   `/planets`: Stores planet data.  No authentication needed for `get` or `list`. Ensures QAPs.\n*   `/missions`: Stores mission data.  No authentication needed for `get` or `list`. Ensures QAPs.\n*   `/real_time_data`: Stores real-time data.  No authentication needed for `get` or `list`. Ensures QAPs.\n\nThis design avoids complex rule logic and ensures scalability and debuggability.  Since all collections are publicly readable, security rules will focus on preventing unauthorized writes."
+  }
+}
