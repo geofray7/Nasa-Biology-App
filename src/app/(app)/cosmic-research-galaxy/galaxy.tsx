@@ -1,3 +1,4 @@
+
 'use client';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 
@@ -101,10 +102,10 @@ const AdvancedResearchGalaxy = ({ papers = [], onPaperSelect, searchQuery = '' }
 
     // Clear with space gradient
     const gradient = ctx.createRadialGradient(width/2, height/2, 0, width/2, height/2, width/1.5);
-    gradient.addColorStop(0, 'hsl(var(--background) / 0.1)');
-    gradient.addColorStop(1, 'hsl(var(--background))');
+    gradient.addColorStop(0, 'hsla(240, 10%, 3.9%, 0.1)');
+    gradient.addColorStop(1, 'hsl(240, 10%, 3.9%)');
 
-    ctx.fillStyle = 'hsl(var(--background))';
+    ctx.fillStyle = 'hsl(240, 10%, 3.9%)';
     ctx.fillRect(0, 0, width, height);
 
     ctx.fillStyle = gradient;
@@ -226,7 +227,7 @@ const AdvancedResearchGalaxy = ({ papers = [], onPaperSelect, searchQuery = '' }
 
       // Inner highlight
       ctx.shadowBlur = 0;
-      ctx.fillStyle = 'hsl(var(--card))';
+      ctx.fillStyle = 'hsl(240, 5.9%, 10%)';
       ctx.beginPath();
       ctx.arc(x, y, size * 0.4, 0, Math.PI * 2);
       ctx.fill();
