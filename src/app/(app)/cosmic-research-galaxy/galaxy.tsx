@@ -190,11 +190,14 @@ const AdvancedResearchGalaxy = ({ papers = [], onPaperSelect, searchQuery = '' }
       const scale = 1000 / (1000 + particle.z);
       const x2d = particle.x * scale + width / 2;
       const y2d = particle.y * scale + height / 2;
+      const radius = particle.size * scale;
 
-      ctx.fillStyle = `rgba(255, 255, 255, ${0.3 + particle.z / 3000})`;
-      ctx.beginPath();
-      ctx.arc(x2d, y2d, particle.size * scale, 0, Math.PI * 2);
-      ctx.fill();
+      if (radius > 0) {
+        ctx.fillStyle = `rgba(255, 255, 255, ${0.3 + particle.z / 3000})`;
+        ctx.beginPath();
+        ctx.arc(x2d, y2d, radius, 0, Math.PI * 2);
+        ctx.fill();
+      }
     });
   };
 
