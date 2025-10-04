@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls, Line } from '@react-three/drei';
+import { OrbitControls, Line, Sphere, Text } from '@react-three/drei';
 import * as THREE from 'three';
 import {
   getResearchPapers,
@@ -20,84 +20,135 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 type NodeObject = {
   id: string;
-  x?: number;
-  y?: number;
-  z?: number;
-  vx?: number;
-  vy?: number;
-  vz?: number;
-  __threeObj?: THREE.Object3D;
+  position: THREE.Vector3;
+  velocity: THREE.Vector3;
+  color: THREE.Color;
 } & Record<string, any>;
 
 type LinkObject = {
-  source: string | NodeObject;
-  target: string | NodeObject;
+  source: string;
+  target: string;
 };
 
 const Node = ({ node, onClick, selected }) => {
   const [isHovered, setIsHovered] = useState(false);
-  const ref = useRef<THREE.Sprite>();
+  const ref = useRef<THREE.Mesh>(null!);
 
-  const color = useMemo(() => new THREE.Color(selected ? '#E67E22' : isHovered ? '#8E44AD' : '#6C3483'), [isHovered, selected]);
-  
   useFrame(() => {
-    if (ref.current && node.x !== undefined && node.y !== undefined && node.z !== undefined) {
-      ref.current.position.set(node.x, node.y, node.z);
+    if (ref.current && node.position) {
+      ref.current.position.copy(node.position);
     }
   });
+
+  const finalColor = useMemo(() => {
+    if (selected) return new THREE.Color('#E67E22');
+    if (isHovered) return new THREE.Color('#8E44AD');
+    return node.color;
+  }, [selected, isHovered, node.color]);
 
   const handleClick = useCallback(() => {
     onClick(node);
   }, [node, onClick]);
 
-  const texture = useMemo(() => {
-    const canvas = document.createElement('canvas');
-    canvas.width = 64;
-    canvas.height = 64;
-    const context = canvas.getContext('2d');
-    if (context) {
-        context.beginPath();
-        context.arc(32, 32, 30, 0, 2 * Math.PI);
-        context.fillStyle = color.getStyle();
-        context.fill();
-    }
-    return new THREE.CanvasTexture(canvas);
-  }, [color]);
-
-
   return (
-    <sprite
+    <Sphere
       ref={ref}
-      scale={selected ? 8 : 5}
+      args={[1, 32, 32]}
+      scale={selected ? 1.5 : 1}
       onPointerOver={() => setIsHovered(true)}
       onPointerOut={() => setIsHovered(false)}
       onClick={handleClick}
     >
-      <spriteMaterial attach="material" map={texture} transparent opacity={0.8} />
-    </sprite>
+      <meshStandardMaterial
+        color={finalColor}
+        emissive={finalColor}
+        emissiveIntensity={isHovered || selected ? 0.5 : 0.2}
+        roughness={0.4}
+        metalness={0.1}
+      />
+    </Sphere>
   );
 };
 
-
 const ForceGraph = ({ data, onNodeClick, selectedNodeId }) => {
-  const [graphData, setGraphData] = useState<{ nodes: NodeObject[], links: LinkObject[] }>({ nodes: [], links: [] });
+  const [nodes, setNodes] = useState<NodeObject[]>([]);
+  const [links, setLinks] = useState<LinkObject[]>([]);
 
   useEffect(() => {
-    const nodes = data.nodes.map(node => ({ ...node }));
-    const links = data.links.map(link => ({ ...link }));
-
-    const simulation = (window as any).d3.forceSimulation(nodes, 3)
-      .force('link', (window as any).d3.forceLink(links).id(d => d.id).distance(50))
-      .force('charge', (window as any).d3.forceManyBody().strength(-100))
-      .force('center', (window as any).d3.forceCenter())
-      .on('tick', () => {
-        setGraphData({ nodes: [...nodes], links: [...links] });
-      });
-    
-    return () => simulation.stop();
+    const initialNodes = data.nodes.map(d => ({
+      ...d,
+      id: d.id,
+      position: new THREE.Vector3(
+        (Math.random() - 0.5) * 100,
+        (Math.random() - 0.5) * 100,
+        (Math.random() - 0.5) * 100
+      ),
+      velocity: new THREE.Vector3(),
+      color: new THREE.Color(0x6c3483),
+    }));
+    setNodes(initialNodes);
+    setLinks(data.links);
   }, [data]);
-  
-  const { nodes, links } = graphData;
+
+  const nodeMap = useMemo(() => {
+    const map = new Map<string, NodeObject>();
+    nodes.forEach(node => map.set(node.id, node));
+    return map;
+  }, [nodes]);
+
+  useFrame((_, delta) => {
+    if (nodes.length === 0) return;
+
+    const newNodes = nodes.map(node => ({
+      ...node,
+      velocity: node.velocity.clone(),
+      position: node.position.clone(),
+    }));
+
+    // Repulsion force
+    for (let i = 0; i < newNodes.length; i++) {
+      for (let j = i + 1; j < newNodes.length; j++) {
+        const ni = newNodes[i];
+        const nj = newNodes[j];
+        const deltaPos = new THREE.Vector3().subVectors(ni.position, nj.position);
+        const distSq = deltaPos.lengthSq();
+        if (distSq > 0) {
+          const force = 150 / distSq;
+          const forceVec = deltaPos.normalize().multiplyScalar(force);
+          ni.velocity.add(forceVec);
+          nj.velocity.sub(forceVec);
+        }
+      }
+    }
+
+    // Link force (attraction)
+    for (const link of links) {
+      const sourceNode = newNodes.find(n => n.id === link.source);
+      const targetNode = newNodes.find(n => n.id === link.target);
+      if (sourceNode && targetNode) {
+        const deltaPos = new THREE.Vector3().subVectors(targetNode.position, sourceNode.position);
+        const dist = deltaPos.length();
+        const force = (dist - 50) * 0.01;
+        const forceVec = deltaPos.normalize().multiplyScalar(force);
+        sourceNode.velocity.add(forceVec);
+        targetNode.velocity.sub(forceVec);
+      }
+    }
+    
+    // Center force
+     for (const node of newNodes) {
+        const centerForce = node.position.clone().multiplyScalar(-0.001);
+        node.velocity.add(centerForce);
+     }
+
+    // Update positions
+    for (const node of newNodes) {
+      node.velocity.multiplyScalar(0.95); // Damping
+      node.position.add(node.velocity.clone().multiplyScalar(delta));
+    }
+    
+    setNodes(newNodes);
+  });
 
   if (nodes.length === 0) return null;
 
@@ -112,13 +163,13 @@ const ForceGraph = ({ data, onNodeClick, selectedNodeId }) => {
         />
       ))}
       {links.map((link, i) => {
-        const source = link.source as NodeObject;
-        const target = link.target as NodeObject;
-        if (!source.x || !source.y || !source.z || !target.x || !target.y || !target.z) return null;
+        const source = nodeMap.get(link.source);
+        const target = nodeMap.get(link.target);
+        if (!source || !target) return null;
         return (
           <Line
             key={i}
-            points={[[source.x, source.y, source.z], [target.x, target.y, target.z]]}
+            points={[source.position, target.position]}
             color="#aaa"
             lineWidth={0.5}
             transparent
@@ -135,7 +186,9 @@ function Rig() {
   const vec = new THREE.Vector3();
 
   return useFrame(() => {
-    camera.position.lerp(vec.set(mouse.x * 2, mouse.y * 2, camera.position.z), 0.02);
+    const targetX = mouse.x * 20;
+    const targetY = mouse.y * 20;
+    camera.position.lerp(vec.set(targetX, targetY, camera.position.z), 0.02);
     camera.lookAt(0, 0, 0);
   });
 }
@@ -146,20 +199,9 @@ export function Galaxy() {
     links: [],
   });
   const [selectedNode, setSelectedNode] = useState<any>(null);
-  const [isD3Ready, setIsD3Ready] = useState(false);
 
   useEffect(() => {
     getResearchPapers().then(setData);
-
-    const script = document.createElement('script');
-    script.src = 'https://d3js.org/d3-force-3d.v3.min.js';
-    script.async = true;
-    script.onload = () => setIsD3Ready(true);
-    document.body.appendChild(script);
-
-    return () => {
-      document.body.removeChild(script);
-    }
   }, []);
 
   const handleNodeClick = useCallback(node => {
@@ -172,12 +214,12 @@ export function Galaxy() {
 
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>
-      <Canvas camera={{ position: [0, 0, 300] }}>
-        <ambientLight intensity={1.5} />
-        <pointLight position={[10, 10, 10]} intensity={0.5}/>
-        <pointLight position={[-10, -10, -10]} intensity={0.5}/>
-        {isD3Ready && data.nodes.length > 0 && <ForceGraph data={data} onNodeClick={handleNodeClick} selectedNodeId={selectedNode?.id} />}
-        <OrbitControls />
+      <Canvas camera={{ position: [0, 0, 150], fov: 75 }}>
+        <ambientLight intensity={1} />
+        <pointLight position={[100, 100, 100]} intensity={0.8} />
+        <pointLight position={[-100, -100, -100]} intensity={0.8} />
+        {data.nodes.length > 0 && <ForceGraph data={data} onNodeClick={handleNodeClick} selectedNodeId={selectedNode?.id} />}
+        <OrbitControls enableDamping dampingFactor={0.1} />
         <Rig />
       </Canvas>
       <AnimatePresence>

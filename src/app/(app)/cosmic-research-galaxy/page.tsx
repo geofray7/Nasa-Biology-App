@@ -1,7 +1,7 @@
 'use client';
 import dynamic from 'next/dynamic';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Orbit, Loader } from 'lucide-react';
+import { Loader } from 'lucide-react';
 
 const Galaxy = dynamic(
   () => import('./galaxy').then((mod) => mod.Galaxy),
