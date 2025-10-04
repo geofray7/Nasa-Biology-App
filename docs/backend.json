@@ -292,3 +292,4 @@
     "reasoning": "The data structure prioritizes clear segregation and avoids hierarchical `get()` calls for authorization. This is achieved through structural segregation and, where necessary, denormalization.\n\n*   `/planets`: Stores planet data.  No authentication needed for `get` or `list`. Ensures QAPs.\n*   `/missions`: Stores mission data.  No authentication needed for `get` or `list`. Ensures QAPs.\n*   `/real_time_data`: Stores real-time data.  No authentication needed for `get` or `list`. Ensures QAPs.\n\nThis design avoids complex rule logic and ensures scalability and debuggability.  Since all collections are publicly readable, security rules will focus on preventing unauthorized writes."
   }
 }
+    
