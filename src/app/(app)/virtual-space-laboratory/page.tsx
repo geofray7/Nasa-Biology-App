@@ -1,25 +1,17 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { FlaskConical } from 'lucide-react';
+import VirtualSpaceLab from './lab';
 
 export default function VirtualSpaceLaboratoryPage() {
   return (
-    <div className="flex flex-col items-center justify-center h-full text-center">
-      <Card className="w-full max-w-md animate-fade-in">
-        <CardHeader>
-          <div className="mx-auto bg-primary/10 p-3 rounded-full">
-            <FlaskConical className="size-12 text-primary" />
-          </div>
-          <CardTitle className="mt-4 font-headline text-2xl">
-            Virtual Space Laboratory
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">
-            This feature is under construction. Soon, you'll be able to
-            simulate microgravity experiments and visualize results.
-          </p>
-        </CardContent>
-      </Card>
+    <div className="space-y-4">
+      <div className="text-center">
+        <h1 className="text-3xl font-bold font-headline">
+          Virtual Space Laboratory
+        </h1>
+        <p className="text-muted-foreground">
+          Simulate NASA biology experiments in space conditions.
+        </p>
+      </div>
+      <VirtualSpaceLab />
     </div>
   );
 }
