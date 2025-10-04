@@ -1,6 +1,7 @@
+
 'use client';
 import { useState, useEffect, useRef } from 'react';
-import { Bot, PaperPlane, User2 } from 'lucide-react';
+import { Bot, Send, User2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 // NASA Biology Knowledge Base - Comprehensive dataset from user prompt
@@ -396,7 +397,7 @@ Could you please rephrase your question or ask about one of these NASA biology t
                             onClick={handleSendMessage}
                             className="w-12 h-12 rounded-full bg-[#0b3d91] text-white flex items-center justify-center transition-all hover:bg-[#1e5bc9] hover:scale-105 active:scale-95"
                         >
-                            <PaperPlane size={20} />
+                            <Send size={20} />
                         </button>
                     </div>
                 </div>
