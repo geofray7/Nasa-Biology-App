@@ -151,7 +151,7 @@
 }
 
 .toggle-slider {
-  @apply w-11 h-6 bg-muted rounded-full relative transition-colors;
+  @apply w-11 h-6 bg-muted rounded-full relative transition-colors flex-shrink-0;
 }
 
 .toggle-slider::before {
