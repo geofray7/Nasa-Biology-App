@@ -1,8 +1,9 @@
 'use client';
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Canvas, useThree, useFrame } from '@react-three/fiber';
-import { OrbitControls, Text } from '@react-three/drei';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
+import { OrbitControls, Line } from '@react-three/drei';
 import * as THREE from 'three';
+import { forceSimulation } from 'd3-force-3d';
 import {
   getResearchPapers,
   type ResearchPapersOutput,
@@ -27,44 +28,103 @@ type NodeObject = {
   vy?: number;
   vz?: number;
   __threeObj?: THREE.Object3D;
-};
+} & Record<string, any>;
 
 type LinkObject = {
   source: string | NodeObject;
   target: string | NodeObject;
 };
 
-const ForceGraph = ({ data, onNodeClick }) => {
-  const ForceGraph3D = require('react-force-graph-3d').default;
+const Node = ({ node, onClick, selected }) => {
+  const [isHovered, setIsHovered] = useState(false);
+  const ref = useRef<THREE.Sprite>();
+
+  const color = useMemo(() => new THREE.Color(selected ? '#E67E22' : isHovered ? '#8E44AD' : '#6C3483'), [isHovered, selected]);
+  
+  useFrame(() => {
+    if (ref.current && node.x !== undefined && node.y !== undefined && node.z !== undefined) {
+      ref.current.position.set(node.x, node.y, node.z);
+    }
+  });
+
+  const handleClick = useCallback(() => {
+    onClick(node);
+  }, [node, onClick]);
+
+  const texture = useMemo(() => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 64;
+    canvas.height = 64;
+    const context = canvas.getContext('2d');
+    if (context) {
+        context.beginPath();
+        context.arc(32, 32, 30, 0, 2 * Math.PI);
+        context.fillStyle = color.getStyle();
+        context.fill();
+    }
+    return new THREE.CanvasTexture(canvas);
+  }, [color]);
+
 
   return (
-    <ForceGraph3D
-      graphData={data}
-      nodeLabel="title"
-      nodeAutoColorBy="group"
-      linkDirectionalParticles={2}
-      linkDirectionalParticleWidth={1.5}
-      linkDirectionalParticleSpeed={0.006}
-      onNodeClick={onNodeClick}
-      nodeThreeObject={(node: any) => {
-        const sprite = new THREE.Sprite(
-          new THREE.SpriteMaterial({
-            color: node.color,
-            map: new THREE.TextureLoader().load(
-              'data:image/svg+xml,' +
-                encodeURIComponent(
-                  `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="${node.color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle></svg>`
-                )
-            ),
-            blending: THREE.AdditiveBlending,
-            depthWrite: false,
-            transparent: true,
-          })
+    <sprite
+      ref={ref}
+      scale={selected ? 8 : 5}
+      onPointerOver={() => setIsHovered(true)}
+      onPointerOut={() => setIsHovered(false)}
+      onClick={handleClick}
+    >
+      <spriteMaterial attach="material" map={texture} transparent opacity={0.8} />
+    </sprite>
+  );
+};
+
+
+const ForceGraph = ({ data, onNodeClick, selectedNodeId }) => {
+  const [nodes, setNodes] = useState<NodeObject[]>([]);
+  const [links, setLinks] = useState<LinkObject[]>([]);
+
+  useEffect(() => {
+    const simulation = forceSimulation(data.nodes, 3)
+      .force('link', (d3 as any).forceLink(data.links).id(d => d.id).distance(50))
+      .force('charge', (d3 as any).forceManyBody().strength(-100))
+      .force('center', (d3 as any).forceCenter())
+      .on('tick', () => {
+        setNodes([...simulation.nodes()]);
+        setLinks([...simulation.force('link').links()]);
+      });
+    
+    return () => simulation.stop();
+  }, [data]);
+  
+  if (nodes.length === 0) return null;
+
+  return (
+    <group>
+      {nodes.map(node => (
+        <Node
+          key={node.id}
+          node={node}
+          onClick={onNodeClick}
+          selected={selectedNodeId === node.id}
+        />
+      ))}
+      {links.map((link, i) => {
+        const source = link.source as NodeObject;
+        const target = link.target as NodeObject;
+        if (!source.x || !target.x) return null;
+        return (
+          <Line
+            key={i}
+            points={[[source.x, source.y, source.z], [target.x, target.y, target.z]]}
+            color="#aaa"
+            lineWidth={0.5}
+            transparent
+            opacity={0.5}
+          />
         );
-        sprite.scale.set(12, 12, 1);
-        return sprite;
-      }}
-    />
+      })}
+    </group>
   );
 };
 
@@ -100,9 +160,10 @@ export function Galaxy() {
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>
       <Canvas camera={{ position: [0, 0, 300] }}>
-        <ambientLight intensity={0.5} />
-        <pointLight position={[10, 10, 10]} />
-        <ForceGraph data={data} onNodeClick={handleNodeClick} />
+        <ambientLight intensity={1.5} />
+        <pointLight position={[10, 10, 10]} intensity={0.5}/>
+        <pointLight position={[-10, -10, -10]} intensity={0.5}/>
+        {data.nodes.length > 0 && <ForceGraph data={data} onNodeClick={handleNodeClick} selectedNodeId={selectedNode?.id} />}
         <OrbitControls />
         <Rig />
       </Canvas>
@@ -115,7 +176,7 @@ export function Galaxy() {
             transition={{ duration: 0.3 }}
             className="absolute top-0 right-0 h-full w-full max-w-sm"
           >
-            <Card className="h-full rounded-l-lg rounded-r-none border-l-2 border-accent shadow-2xl">
+            <Card className="h-full rounded-l-lg rounded-r-none border-l-2 border-accent shadow-2xl bg-card/80 backdrop-blur-sm">
               <CardHeader className="flex flex-row items-start justify-between">
                 <div className="space-y-1.5">
                   <CardTitle className="font-headline text-lg">
