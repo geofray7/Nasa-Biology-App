@@ -1,11 +1,11 @@
 'use client';
 
-import { useFormState, useFormStatus } from 'react-dom';
+import { useFormStatus } from 'react-dom';
 import { askAiCopilot, type FormState } from './actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ArrowUp, Bot, BrainCircuit, User } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useActionState, useEffect, useRef, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -151,7 +151,7 @@ function ChatFormContent({ error }: { error?: string }) {
 }
 
 export function ChatInterface() {
-  const [state, formAction] = useFormState(askAiCopilot, initialState);
+  const [state, formAction] = useActionState(askAiCopilot, initialState);
   const [messages, setMessages] = useState<Message[]>([]);
   const formRef = useRef<HTMLFormElement>(null);
   const { pending } = useFormStatus();
