@@ -10,9 +10,7 @@ import {
   Plus,
   Video,
   Send,
-  FilePdf,
   FileText,
-  FileCode,
   FileImage,
   MoreVertical,
 } from 'lucide-react';
@@ -68,7 +66,7 @@ const initialMessages = [
 
 // --- Sub-components ---
 
-const StatCard = ({ icon: Icon, value, label, iconClass }) => (
+const StatCard = ({ icon: Icon, value, label, iconClass }: { icon: React.ElementType, value: number, label: string, iconClass: string }) => (
   <Card className="bg-card/50 hover:border-primary/50 transition-all duration-300">
     <CardContent className="p-4 flex items-center gap-4">
       <div className={`p-4 rounded-lg ${iconClass}`}>
@@ -82,8 +80,8 @@ const StatCard = ({ icon: Icon, value, label, iconClass }) => (
   </Card>
 );
 
-const ProjectCard = ({ project }) => {
-  const getStatusClass = (status) => {
+const ProjectCard = ({ project }: {project: typeof initialProjects[0]}) => {
+  const getStatusClass = (status: string) => {
     switch (status) {
       case 'In Progress': return 'bg-green-500/20 text-green-400';
       case 'Planning': return 'bg-yellow-500/20 text-yellow-400';
@@ -120,7 +118,7 @@ const ProjectCard = ({ project }) => {
   );
 };
 
-const ActivityItem = ({ activity }) => {
+const ActivityItem = ({ activity }: { activity: typeof initialActivities[0]}) => {
   const user = teamMembers.find(m => m.id === activity.user);
   if (!user) return null;
   return (
@@ -140,11 +138,11 @@ const ActivityItem = ({ activity }) => {
   );
 };
 
-const FileCard = ({ file }) => {
+const FileCard = ({ file }: { file: typeof initialFiles[0]}) => {
   const sharedBy = teamMembers.find(m => m.id === file.sharedById);
   let Icon;
   switch (file.type) {
-    case 'pdf': Icon = FilePdf; break;
+    case 'pdf': Icon = FileText; break;
     case 'doc': Icon = FileText; break;
     case 'figma': Icon = FileImage; break;
     default: Icon = File;
