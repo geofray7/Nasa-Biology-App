@@ -6,6 +6,7 @@ import { AppSidebar } from '@/components/app-sidebar';
 import { AppHeader } from '@/components/app-header';
 import { SettingsProvider, useSettingsContext } from '@/hooks/use-settings.tsx';
 import { SettingsModal } from '@/components/settings-modal';
+import { FirebaseClientProvider } from '@/firebase';
 
 function AppLayoutContent({ children }: { children: ReactNode }) {
   const { settings, updateSettings, isLoaded } = useSettingsContext();
@@ -40,8 +41,10 @@ function AppLayoutContent({ children }: { children: ReactNode }) {
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   return (
-    <SettingsProvider>
-      <AppLayoutContent>{children}</AppLayoutContent>
-    </SettingsProvider>
+    <FirebaseClientProvider>
+      <SettingsProvider>
+        <AppLayoutContent>{children}</AppLayoutContent>
+      </SettingsProvider>
+    </FirebaseClientProvider>
   );
 }
