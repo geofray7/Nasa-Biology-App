@@ -3,7 +3,6 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, Line } from '@react-three/drei';
 import * as THREE from 'three';
-import { forceSimulation } from 'd3-force-3d';
 import {
   getResearchPapers,
   type ResearchPapersOutput,
@@ -81,22 +80,25 @@ const Node = ({ node, onClick, selected }) => {
 
 
 const ForceGraph = ({ data, onNodeClick, selectedNodeId }) => {
-  const [nodes, setNodes] = useState<NodeObject[]>([]);
-  const [links, setLinks] = useState<LinkObject[]>([]);
+  const [graphData, setGraphData] = useState<{ nodes: NodeObject[], links: LinkObject[] }>({ nodes: [], links: [] });
 
   useEffect(() => {
-    const simulation = forceSimulation(data.nodes, 3)
-      .force('link', (d3 as any).forceLink(data.links).id(d => d.id).distance(50))
-      .force('charge', (d3 as any).forceManyBody().strength(-100))
-      .force('center', (d3 as any).forceCenter())
+    const nodes = data.nodes.map(node => ({ ...node }));
+    const links = data.links.map(link => ({ ...link }));
+
+    const simulation = (window as any).d3.forceSimulation(nodes, 3)
+      .force('link', (window as any).d3.forceLink(links).id(d => d.id).distance(50))
+      .force('charge', (window as any).d3.forceManyBody().strength(-100))
+      .force('center', (window as any).d3.forceCenter())
       .on('tick', () => {
-        setNodes([...simulation.nodes()]);
-        setLinks([...simulation.force('link').links()]);
+        setGraphData({ nodes: [...nodes], links: [...links] });
       });
     
     return () => simulation.stop();
   }, [data]);
   
+  const { nodes, links } = graphData;
+
   if (nodes.length === 0) return null;
 
   return (
@@ -112,7 +114,7 @@ const ForceGraph = ({ data, onNodeClick, selectedNodeId }) => {
       {links.map((link, i) => {
         const source = link.source as NodeObject;
         const target = link.target as NodeObject;
-        if (!source.x || !target.x) return null;
+        if (!source.x || !source.y || !source.z || !target.x || !target.y || !target.z) return null;
         return (
           <Line
             key={i}
@@ -144,9 +146,20 @@ export function Galaxy() {
     links: [],
   });
   const [selectedNode, setSelectedNode] = useState<any>(null);
+  const [isD3Ready, setIsD3Ready] = useState(false);
 
   useEffect(() => {
     getResearchPapers().then(setData);
+
+    const script = document.createElement('script');
+    script.src = 'https://d3js.org/d3-force-3d.v3.min.js';
+    script.async = true;
+    script.onload = () => setIsD3Ready(true);
+    document.body.appendChild(script);
+
+    return () => {
+      document.body.removeChild(script);
+    }
   }, []);
 
   const handleNodeClick = useCallback(node => {
@@ -163,7 +176,7 @@ export function Galaxy() {
         <ambientLight intensity={1.5} />
         <pointLight position={[10, 10, 10]} intensity={0.5}/>
         <pointLight position={[-10, -10, -10]} intensity={0.5}/>
-        {data.nodes.length > 0 && <ForceGraph data={data} onNodeClick={handleNodeClick} selectedNodeId={selectedNode?.id} />}
+        {isD3Ready && data.nodes.length > 0 && <ForceGraph data={data} onNodeClick={handleNodeClick} selectedNodeId={selectedNode?.id} />}
         <OrbitControls />
         <Rig />
       </Canvas>
