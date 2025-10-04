@@ -1,24 +1,44 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Orbit } from 'lucide-react';
+
+'use client';
+
+import { useState, useEffect } from 'react';
+import { getResearchPapers, type ResearchPapersOutput } from '@/ai/flows/get-research-papers';
+import ResearchGalaxy from './galaxy';
+import { Input } from '@/components/ui/input';
+import { Card } from '@/components/ui/card';
 
 export default function CosmicResearchGalaxyPage() {
+  const [data, setData] = useState<ResearchPapersOutput>({ nodes: [], links: [] });
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    getResearchPapers().then((fetchedData) => {
+      setData(fetchedData);
+      setLoading(false);
+    });
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <p>Loading Research Galaxy...</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-col items-center justify-center h-full text-center">
-      <Card className="w-full max-w-md animate-fade-in">
-        <CardHeader>
-          <div className="mx-auto bg-primary/10 p-3 rounded-full">
-            <Orbit className="size-12 text-primary" />
-          </div>
-          <CardTitle className="mt-4 font-headline text-2xl">
-            Cosmic Research Galaxy
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-muted-foreground">
-            This feature is under construction. Soon, you'll be able to
-            visualize research papers as an interactive 3D star map.
-          </p>
-        </CardContent>
+    <div className="space-y-4">
+       <h1 className="text-2xl font-headline font-bold">Cosmic Research Galaxy</h1>
+      <Card>
+        <div className="p-4 border-b">
+          <Input 
+            placeholder="Search for papers..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+        <ResearchGalaxy papers={data.nodes} searchQuery={searchQuery} />
       </Card>
     </div>
   );

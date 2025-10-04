@@ -1,274 +1,163 @@
+
 'use client';
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls, Line, Sphere, Text } from '@react-three/drei';
-import * as THREE from 'three';
-import {
-  getResearchPapers,
-  type ResearchPapersOutput,
-} from '@/ai/flows/get-research-papers';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { X } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import React, { useState, useEffect } from 'react';
 
-type NodeObject = {
-  id: string;
-  position: THREE.Vector3;
-  velocity: THREE.Vector3;
-  color: THREE.Color;
-} & Record<string, any>;
+const ResearchGalaxy = ({ papers = [], onPaperSelect, searchQuery = '' }) => {
+  const [positions, setPositions] = useState([]);
+  const [selectedPaper, setSelectedPaper] = useState(null);
 
-type LinkObject = {
-  source: string;
-  target: string;
-};
-
-const Node = ({ node, onClick, selected }) => {
-  const [isHovered, setIsHovered] = useState(false);
-  const ref = useRef<THREE.Mesh>(null!);
-
-  useFrame(() => {
-    if (ref.current && node.position) {
-      ref.current.position.copy(node.position);
-    }
-  });
-
-  const finalColor = useMemo(() => {
-    if (selected) return new THREE.Color('#E67E22');
-    if (isHovered) return new THREE.Color('#8E44AD');
-    return node.color;
-  }, [selected, isHovered, node.color]);
-
-  const handleClick = useCallback(() => {
-    onClick(node);
-  }, [node, onClick]);
-
-  return (
-    <Sphere
-      ref={ref}
-      args={[1, 32, 32]}
-      scale={selected ? 1.5 : 1}
-      onPointerOver={() => setIsHovered(true)}
-      onPointerOut={() => setIsHovered(false)}
-      onClick={handleClick}
-    >
-      <meshStandardMaterial
-        color={finalColor}
-        emissive={finalColor}
-        emissiveIntensity={isHovered || selected ? 0.5 : 0.2}
-        roughness={0.4}
-        metalness={0.1}
-      />
-    </Sphere>
-  );
-};
-
-const ForceGraph = ({ data, onNodeClick, selectedNodeId }) => {
-  const [nodes, setNodes] = useState<NodeObject[]>([]);
-  const [links, setLinks] = useState<LinkObject[]>([]);
-
+  // Generate positions for papers (circular layout)
   useEffect(() => {
-    const initialNodes = data.nodes.map(d => ({
-      ...d,
-      id: d.id,
-      position: new THREE.Vector3(
-        (Math.random() - 0.5) * 100,
-        (Math.random() - 0.5) * 100,
-        (Math.random() - 0.5) * 100
-      ),
-      velocity: new THREE.Vector3(),
-      color: new THREE.Color(0x6c3483),
-    }));
-    setNodes(initialNodes);
-    setLinks(data.links);
-  }, [data]);
+    const generatedPositions = papers.map((paper, index) => {
+      const angle = (index / papers.length) * 2 * Math.PI;
+      const radius = 200 + ((paper.year - 2022) * 50) + (Math.random() * 50); // Radius based on year
+      const containerWidth = 800; // a fixed width for calculation
+      const containerHeight = 600;
 
-  const nodeMap = useMemo(() => {
-    const map = new Map<string, NodeObject>();
-    nodes.forEach(node => map.set(node.id, node));
-    return map;
-  }, [nodes]);
+      return {
+        x: (containerWidth / 2) + radius * Math.cos(angle),
+        y: (containerHeight / 2) + radius * Math.sin(angle),
+        ...paper
+      };
+    });
+    setPositions(generatedPositions);
+  }, [papers]);
 
-  useFrame((_, delta) => {
-    if (nodes.length === 0) return;
-
-    const newNodes = nodes.map(node => ({
-      ...node,
-      velocity: node.velocity.clone(),
-      position: node.position.clone(),
-    }));
-
-    // Repulsion force
-    for (let i = 0; i < newNodes.length; i++) {
-      for (let j = i + 1; j < newNodes.length; j++) {
-        const ni = newNodes[i];
-        const nj = newNodes[j];
-        const deltaPos = new THREE.Vector3().subVectors(ni.position, nj.position);
-        const distSq = deltaPos.lengthSq();
-        if (distSq > 0) {
-          const force = 150 / distSq;
-          const forceVec = deltaPos.normalize().multiplyScalar(force);
-          ni.velocity.add(forceVec);
-          nj.velocity.sub(forceVec);
-        }
-      }
+  // Color mapping for domains
+  const getDomainColor = (domain) => {
+    const colors = {
+      'microgravity': 'bg-blue-500',
+      'radiation': 'bg-red-500',
+      'plant biology': 'bg-green-500',
+      'genomics': 'bg-purple-500',
+      'astrobiology': 'bg-orange-500',
+      'materials science': 'bg-yellow-400',
+      'animal models': 'bg-pink-500',
+      'astronaut health': 'bg-indigo-500',
+      'deep space': 'bg-teal-500',
+      'terraforming': 'bg-cyan-500',
+      'lunar exploration': 'bg-gray-400',
+      'mars': 'bg-red-700',
+      'space biology': 'bg-white'
+    };
+    const key = domain.toLowerCase();
+    for(const colorKey in colors) {
+      if (key.includes(colorKey)) return colors[colorKey];
     }
-
-    // Link force (attraction)
-    for (const link of links) {
-      const sourceNode = newNodes.find(n => n.id === link.source);
-      const targetNode = newNodes.find(n => n.id === link.target);
-      if (sourceNode && targetNode) {
-        const deltaPos = new THREE.Vector3().subVectors(targetNode.position, sourceNode.position);
-        const dist = deltaPos.length();
-        const force = (dist - 50) * 0.01;
-        const forceVec = deltaPos.normalize().multiplyScalar(force);
-        sourceNode.velocity.add(forceVec);
-        targetNode.velocity.sub(forceVec);
-      }
-    }
-    
-    // Center force
-     for (const node of newNodes) {
-        const centerForce = node.position.clone().multiplyScalar(-0.001);
-        node.velocity.add(centerForce);
-     }
-
-    // Update positions
-    for (const node of newNodes) {
-      node.velocity.multiplyScalar(0.95); // Damping
-      node.position.add(node.velocity.clone().multiplyScalar(delta));
-    }
-    
-    setNodes(newNodes);
-  });
-
-  if (nodes.length === 0) return null;
-
-  return (
-    <group>
-      {nodes.map(node => (
-        <Node
-          key={node.id}
-          node={node}
-          onClick={onNodeClick}
-          selected={selectedNodeId === node.id}
-        />
-      ))}
-      {links.map((link, i) => {
-        const source = nodeMap.get(link.source);
-        const target = nodeMap.get(link.target);
-        if (!source || !target) return null;
-        return (
-          <Line
-            key={i}
-            points={[source.position, target.position]}
-            color="#aaa"
-            lineWidth={0.5}
-            transparent
-            opacity={0.5}
-          />
-        );
-      })}
-    </group>
-  );
-};
-
-function Rig() {
-  const { camera, mouse } = useThree();
-  const vec = new THREE.Vector3();
-
-  return useFrame(() => {
-    const targetX = mouse.x * 20;
-    const targetY = mouse.y * 20;
-    camera.position.lerp(vec.set(targetX, targetY, camera.position.z), 0.02);
-    camera.lookAt(0, 0, 0);
-  });
-}
-
-export function Galaxy() {
-  const [data, setData] = useState<ResearchPapersOutput>({
-    nodes: [],
-    links: [],
-  });
-  const [selectedNode, setSelectedNode] = useState<any>(null);
-
-  useEffect(() => {
-    getResearchPapers().then(setData);
-  }, []);
-
-  const handleNodeClick = useCallback(node => {
-    setSelectedNode(node);
-  }, []);
-
-  const handleClose = () => {
-    setSelectedNode(null);
+    return 'bg-gray-500';
   };
 
-  return (
-    <div style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}>
-      <Canvas camera={{ position: [0, 0, 150], fov: 75 }}>
-        <ambientLight intensity={1} />
-        <pointLight position={[100, 100, 100]} intensity={0.8} />
-        <pointLight position={[-100, -100, -100]} intensity={0.8} />
-        {data.nodes.length > 0 && <ForceGraph data={data} onNodeClick={handleNodeClick} selectedNodeId={selectedNode?.id} />}
-        <OrbitControls enableDamping dampingFactor={0.1} />
-        <Rig />
-      </Canvas>
+  const getGlowColor = (domain) => {
+    const glows = {
+        'microgravity': 'shadow-[0_0_15px_3px_rgba(59,130,246,0.6)]',
+        'radiation': 'shadow-[0_0_15px_3px_rgba(239,68,68,0.6)]',
+        'plant biology': 'shadow-[0_0_15px_3px_rgba(34,197,94,0.6)]',
+        'genomics': 'shadow-[0_0_15px_3px_rgba(168,85,247,0.6)]',
+        'astrobiology': 'shadow-[0_0_15px_3px_rgba(245,158,11,0.6)]',
+        'materials science': 'shadow-[0_0_15px_3px_rgba(250,204,21,0.6)]',
+        'animal models': 'shadow-[0_0_15px_3px_rgba(236,72,153,0.6)]',
+        'astronaut health': 'shadow-[0_0_15px_3px_rgba(99,102,241,0.6)]',
+        'deep space': 'shadow-[0_0_15px_3px_rgba(20,184,166,0.6)]',
+        'terraforming': 'shadow-[0_0_15px_3px_rgba(6,182,212,0.6)]',
+        'lunar exploration': 'shadow-[0_0_15px_3px_rgba(156,163,175,0.6)]',
+        'mars': 'shadow-[0_0_15px_3px_rgba(185,28,28,0.6)]',
+        'space biology': 'shadow-[0_0_15px_3px_rgba(255,255,255,0.6)]'
+    };
+    const key = domain.toLowerCase();
+    for(const glowKey in glows) {
+        if (key.includes(glowKey)) return glows[glowKey];
+      }
+    return 'shadow-gray-500/50';
+  };
 
-      <div
-        className={cn(
-          "absolute top-0 right-0 h-full w-full max-w-sm transition-transform duration-300 ease-in-out",
-          selectedNode ? 'translate-x-0' : 'translate-x-full'
-        )}
-      >
-        <Card className="h-full rounded-l-lg rounded-r-none border-l-2 border-accent shadow-2xl bg-card/80 backdrop-blur-sm">
-          {selectedNode && (
-            <>
-              <CardHeader className="flex flex-row items-start justify-between">
-                <div className="space-y-1.5">
-                  <CardTitle className="font-headline text-lg">
-                    {selectedNode.title}
-                  </CardTitle>
-                  <CardDescription>
-                    {selectedNode.author} ({selectedNode.year})
-                  </CardDescription>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="size-7"
-                  onClick={handleClose}
-                >
-                  <X className="size-4" />
-                </Button>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  {selectedNode.summary}
-                </p>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {selectedNode.keywords.map((keyword: string) => (
-                    <span
-                      key={keyword}
-                      className="px-2 py-1 bg-secondary text-secondary-foreground text-xs rounded"
-                    >
-                      {keyword}
-                    </span>
-                  ))}
-                </div>
-              </CardContent>
-            </>
-          )}
-        </Card>
+  const handlePaperClick = (paper) => {
+    setSelectedPaper(paper);
+    if (onPaperSelect) onPaperSelect(paper);
+  };
+
+  const domainColors: {[key: string]: string} = {
+    'Microgravity': 'bg-blue-500',
+    'Radiation': 'bg-red-500',
+    'Plant Bio': 'bg-green-500',
+    'Genomics': 'bg-purple-500',
+    'Astrobiology': 'bg-orange-500'
+  };
+
+
+  return (
+    <div className="relative w-full h-[70vh] bg-gradient-to-br from-gray-900 via-indigo-900/80 to-black rounded-lg overflow-auto">
+      {/* Galaxy Container */}
+      <div className="relative w-[1000px] h-[800px] scale-75 sm:scale-100 origin-top-left">
+        {positions.map((paper, index) => {
+            const isMatch = searchQuery && (paper.title.toLowerCase().includes(searchQuery.toLowerCase()) || paper.keywords.some(k => k.toLowerCase().includes(searchQuery.toLowerCase())))
+            return (
+                <div
+                    key={paper.id || index}
+                    className={`absolute rounded-full cursor-pointer transition-all duration-300 hover:scale-[1.75] hover:z-10
+                    ${getDomainColor(paper.keywords[0])} 
+                    ${getGlowColor(paper.keywords[0])}
+                    ${isMatch 
+                        ? 'animate-pulse shadow-[0_0_25px_5px_rgba(250,204,21,0.9)] bg-yellow-400' 
+                        : 'shadow-lg'
+                    }`}
+                    style={{
+                    left: `${paper.x}px`,
+                    top: `${paper.y}px`,
+                    width: `${4 + (paper.year - 2021) * 2}px`,
+                    height: `${4 + (paper.year - 2021) * 2}px`,
+                    transform: 'translate(-50%, -50%)'
+                    }}
+                    onClick={() => handlePaperClick(paper)}
+                    title={`${paper.title} (${paper.year})`}
+                />
+            )
+        })}
+      </div>
+
+      {/* Selected Paper Details */}
+      {selectedPaper && (
+        <div className="absolute top-4 right-4 bg-gray-800 bg-opacity-90 backdrop-blur-sm p-6 rounded-lg max-w-sm w-[90%] text-white border border-gray-600 shadow-2xl animate-in fade-in-0 slide-in-from-right-10 duration-300">
+          <button
+            onClick={() => setSelectedPaper(null)}
+            className="absolute top-2 right-2 text-gray-400 hover:text-white p-1 rounded-full bg-gray-700/50 hover:bg-gray-600/50"
+          >
+             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+          
+          <h3 className="font-bold font-headline text-lg mb-2 pr-6">{selectedPaper.title}</h3>
+          <p className="text-sm text-gray-300 mb-3">
+            {selectedPaper.author}
+          </p>
+          
+          <div className="flex flex-wrap gap-2 mb-3">
+            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getDomainColor(selectedPaper.keywords[0])} text-white`}>
+              {selectedPaper.keywords[0]}
+            </span>
+            <span className="px-2 py-1 rounded-full text-xs font-semibold bg-gray-600 text-gray-200">
+              {selectedPaper.year}
+            </span>
+          </div>
+          
+          <p className="text-sm mt-4 text-gray-300 line-clamp-4">
+            {selectedPaper.summary}
+          </p>
+        </div>
+      )}
+
+      {/* Legend */}
+      <div className="absolute bottom-4 left-4 bg-gray-800 bg-opacity-80 backdrop-blur-sm p-3 rounded-lg text-white text-sm border border-gray-700">
+        <h4 className="font-bold mb-2 font-headline">Domains</h4>
+        <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+          {Object.entries(domainColors).map(([domain, color]) => (
+            <div key={domain} className="flex items-center gap-2">
+              <div className={`w-3 h-3 rounded-full ${color}`}></div>
+              <span className="text-xs">{domain}</span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
-}
+};
+
+export default ResearchGalaxy;
