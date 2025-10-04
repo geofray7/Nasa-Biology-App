@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 type NodeObject = {
   id: string;
@@ -213,7 +213,7 @@ export function Galaxy() {
   };
 
   return (
-    <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+    <div style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}>
       <Canvas camera={{ position: [0, 0, 150], fov: 75 }}>
         <ambientLight intensity={1} />
         <pointLight position={[100, 100, 100]} intensity={0.8} />
@@ -222,16 +222,16 @@ export function Galaxy() {
         <OrbitControls enableDamping dampingFactor={0.1} />
         <Rig />
       </Canvas>
-      <AnimatePresence>
-        {selectedNode && (
-          <motion.div
-            initial={{ opacity: 0, x: '100%' }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: '100%' }}
-            transition={{ duration: 0.3 }}
-            className="absolute top-0 right-0 h-full w-full max-w-sm"
-          >
-            <Card className="h-full rounded-l-lg rounded-r-none border-l-2 border-accent shadow-2xl bg-card/80 backdrop-blur-sm">
+
+      <div
+        className={cn(
+          "absolute top-0 right-0 h-full w-full max-w-sm transition-transform duration-300 ease-in-out",
+          selectedNode ? 'translate-x-0' : 'translate-x-full'
+        )}
+      >
+        <Card className="h-full rounded-l-lg rounded-r-none border-l-2 border-accent shadow-2xl bg-card/80 backdrop-blur-sm">
+          {selectedNode && (
+            <>
               <CardHeader className="flex flex-row items-start justify-between">
                 <div className="space-y-1.5">
                   <CardTitle className="font-headline text-lg">
@@ -265,10 +265,10 @@ export function Galaxy() {
                   ))}
                 </div>
               </CardContent>
-            </Card>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            </>
+          )}
+        </Card>
+      </div>
     </div>
   );
 }
