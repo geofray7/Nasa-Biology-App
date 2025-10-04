@@ -1,3 +1,4 @@
+
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
 import {
@@ -95,7 +96,7 @@ const DNAExplorer = () => {
   };
 
   const updateChartData = (sequence:string, mode: string) => {
-    const counts = { A: 0, T: 0, C: 0, G: 0, U: 0 };
+    const counts: { [key: string]: number } = { A: 0, T: 0, C: 0, G: 0, U: 0 };
     for (const base of sequence) {
         if(counts[base] !== undefined) counts[base]++;
     }
@@ -153,7 +154,7 @@ const DNAExplorer = () => {
   };
   
   const handleTranslate = () => {
-    const codonTable = {
+    const codonTable: { [key: string]: string } = {
         'ATG': 'M', 'TAA': '*', 'TAG': '*', 'TGA': '*', 'GCT': 'A', 'GCC': 'A', 'GCA': 'A', 'GCG': 'A',
         'CGT': 'R', 'CGC': 'R', 'CGA': 'R', 'CGG': 'R', 'AGA': 'R', 'AGG': 'R', 'AAT': 'N', 'AAC': 'N',
         'GAT': 'D', 'GAC': 'D', 'TGT': 'C', 'TGC': 'C', 'CAA': 'Q', 'CAG': 'Q', 'GAA': 'E', 'GAG': 'E',
@@ -183,7 +184,7 @@ const DNAExplorer = () => {
   }, [chartMode]);
 
   const getBaseColor = (base: string) => {
-    const colors = { 'A': 'text-red-400', 'T': 'text-green-400', 'C': 'text-blue-400', 'G': 'text-yellow-400' };
+    const colors: { [key: string]: string } = { 'A': 'text-red-400', 'T': 'text-green-400', 'C': 'text-blue-400', 'G': 'text-yellow-400' };
     return colors[base] || 'text-gray-400';
   }
 
@@ -340,8 +341,8 @@ const DNAExplorer = () => {
   );
 };
 
-const StatCard = ({ icon: Icon, title, value, color }) => {
-    const colors = {
+const StatCard = ({ icon: Icon, title, value, color }: { icon: React.ElementType; title: string; value: string | number; color: string; }) => {
+    const colors: { [key: string]: string } = {
         primary: 'text-primary bg-primary/10',
         purple: 'text-purple-400 bg-purple-400/10',
         red: 'text-red-400 bg-red-400/10',
@@ -363,3 +364,5 @@ const StatCard = ({ icon: Icon, title, value, color }) => {
 };
 
 export default DNAExplorer;
+
+    
