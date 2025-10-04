@@ -1,0 +1,78 @@
+{
+  "nodes": [
+    {
+      "id": "1",
+      "title": "Microgravity Effects on Plant Growth",
+      "author": "Dr. A. Jones",
+      "year": 2023,
+      "summary": "Investigates the cellular and molecular responses of Arabidopsis thaliana to long-duration microgravity exposure on the ISS.",
+      "keywords": ["microgravity", "plant biology", "space biology"]
+    },
+    {
+      "id": "2",
+      "title": "Radiation Shielding with Lunar Regolith",
+      "author": "Dr. B. Smith",
+      "year": 2022,
+      "summary": "Examines the efficacy of compacted lunar regolith as a shielding material against galactic cosmic rays (GCR).",
+      "keywords": ["radiation", "lunar exploration", "materials science"]
+    },
+    {
+      "id": "3",
+      "title": "Gene Expression Changes in Space-Flown Rodents",
+      "author": "Dr. C. Lee",
+      "year": 2024,
+      "summary": "A comprehensive study of transcriptomic changes in various tissues of rodents after a 30-day mission.",
+      "keywords": ["genomics", "animal models", "space biology"]
+    },
+    {
+      "id": "4",
+      "title": "Photosynthesis in Simulated Martian Atmosphere",
+      "author": "Dr. D. Patel",
+      "year": 2023,
+      "summary": "Analyzes the efficiency of photosynthesis in cyanobacteria under low-pressure, high-CO2 conditions simulating Mars.",
+      "keywords": ["astrobiology", "terraforming", "plant biology"]
+    },
+    {
+      "id": "5",
+      "title": "Cellular Adaptation to Microgravity in Arabidopsis",
+      "author": "Dr. E. Williams",
+      "year": 2024,
+      "summary": "A follow-up study focusing on the proteomic and metabolomic shifts that accompany genetic changes in microgravity.",
+      "keywords": ["microgravity", "proteomics", "plant biology"]
+    },
+    {
+      "id": "6",
+      "title": "Advanced Materials for GCR Shielding",
+      "author": "Dr. F. Garcia",
+      "year": 2023,
+      "summary": "Development of novel hydrogen-rich polymer composites for enhanced GCR shielding in deep space habitats.",
+      "keywords": ["radiation", "materials science", "deep space"]
+    },
+    {
+      "id": "7",
+      "title": "Musculoskeletal Atrophy in Simulated Microgravity",
+      "author": "Dr. G. Chen",
+      "year": 2022,
+      "summary": "Utilizes rodent models to test countermeasures for muscle and bone loss during long-duration spaceflight.",
+      "keywords": ["animal models", "astronaut health", "microgravity"]
+    },
+    {
+      "id": "8",
+      "title": "Cultivating Crops on Mars: A Review",
+      "author": "Dr. H. Brown",
+      "year": 2024,
+      "summary": "A literature review on the challenges and potential solutions for growing food crops in Martian soil simulants.",
+      "keywords": ["plant biology", "terraforming", "mars"]
+    }
+  ],
+  "links": [
+    { "source": "1", "target": "5" },
+    { "source": "1", "target": "4" },
+    { "source": "1", "target": "8" },
+    { "source": "2", "target": "6" },
+    { "source": "3", "target": "7" },
+    { "source": "3", "target": "5" },
+    { "source": "4", "target": "8" },
+    { "source": "7", "target": "1" }
+  ]
+}
