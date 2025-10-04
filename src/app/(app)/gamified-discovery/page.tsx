@@ -1,8 +1,9 @@
+
 'use client';
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Home,
-  Tasks,
+  ListTodo,
   Map,
   Trophy,
   BarChart,
@@ -24,15 +25,15 @@ import {
   Camera,
   Compass,
   Users,
-  Projector,
+  Presentation,
   File,
   Calendar,
   Cog,
   ChevronRight,
   ArrowUp,
   X,
-  MapMarkerAlt,
-  Paw,
+  MapPin,
+  Dog,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -43,6 +44,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 // --- Backend Simulation Class ---
 class DiscoveryBackend {
@@ -356,7 +358,7 @@ class DiscoveryBackend {
           },
         ],
       };
-      this.saveData(initialData);
+      localStorage.setItem('discoveryData', JSON.stringify(initialData));
     }
   }
 
@@ -566,7 +568,7 @@ const getRarityColor = (rarity: string) => {
 const getIcon = (iconName: string) => {
   const icons: { [key: string]: React.ElementType } = {
     Footprints: Users,
-    ListChecks: Tasks,
+    ListChecks: ListTodo,
     Crown: Crown,
     Gem: Gem,
     Star: Star,
@@ -701,12 +703,19 @@ export default function GamifiedDiscoveryPage() {
           <CardContent className="p-4">
             <div className="flex items-center gap-4">
               <div className="p-3 rounded-lg bg-primary/20">
-                <Tasks className="h-8 w-8 text-primary" />
+                <ListTodo className="h-8 w-8 text-primary" />
               </div>
               <div>
                 <p className="text-2xl font-bold">{activeQuests.length}</p>
                 <p className="text-sm text-muted-foreground">Active Quests</p>
               </div>
+            </div>
+            <div className="mt-2">
+                <Progress value={60} className="h-2" />
+                <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                    <span>Weekly Progress</span>
+                    <span>60%</span>
+                </div>
             </div>
           </CardContent>
         </Card>
@@ -725,6 +734,13 @@ export default function GamifiedDiscoveryPage() {
                 </p>
               </div>
             </div>
+            <div className="mt-2">
+                <Progress value={(unlockedAchievements.length / achievements.length) * 100} className="h-2" />
+                <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                    <span>Collection</span>
+                    <span>{((unlockedAchievements.length / achievements.length) * 100).toFixed(0)}%</span>
+                </div>
+            </div>
           </CardContent>
         </Card>
         <Card>
@@ -739,6 +755,13 @@ export default function GamifiedDiscoveryPage() {
                 </p>
                 <p className="text-sm text-muted-foreground">Discovery Points</p>
               </div>
+            </div>
+            <div className="mt-2">
+                <Progress value={75} className="h-2" />
+                <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                    <span>Next Rank</span>
+                    <span>75%</span>
+                </div>
             </div>
           </CardContent>
         </Card>
@@ -942,3 +965,5 @@ export default function GamifiedDiscoveryPage() {
     </div>
   );
 }
+
+    
