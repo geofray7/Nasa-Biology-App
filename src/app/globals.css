@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -37,6 +38,12 @@
     --sidebar-accent-foreground: 0 0% 98%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 28 80% 52%;
+    --cosmic-deep: #0a0a1a;
+    --cosmic-blue: #3b82f6;
+    --moon-dust: #e5e7eb;
+    --quantum-blue: #0ea5e9;
+    --starlight-white: #f8fafc;
+    --asteroid-gray: #4b5563;
   }
   .dark {
     --background: 240 10% 3.9%;
@@ -80,5 +87,159 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+/* Settings Modal Styles */
+.settings-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(10px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.settings-modal {
+  @apply bg-card border border-primary rounded-xl;
+  width: 90vw;
+  max-width: 800px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 0 50px hsl(var(--primary) / 0.3);
+}
+
+.settings-header {
+  @apply p-5 border-b border-primary flex justify-between items-center;
+}
+
+.settings-tabs {
+  @apply flex border-b border-primary px-5;
+}
+
+.tab-btn {
+  @apply py-3 px-4 bg-transparent border-b-2 border-transparent text-muted-foreground flex items-center gap-2 cursor-pointer;
+}
+
+.tab-btn.active {
+  @apply text-primary border-primary;
+}
+
+.settings-content {
+  @apply flex-1 p-5 overflow-y-auto;
+}
+
+.settings-footer {
+  @apply p-5 border-t border-primary flex justify-end gap-3;
+}
+
+/* Setting Items */
+.setting-item {
+  @apply mb-5;
+}
+
+.setting-item label {
+  @apply block mb-2 font-semibold text-foreground;
+}
+
+/* Toggle Switch */
+.toggle-label {
+  @apply flex items-center gap-3 cursor-pointer;
+}
+
+.toggle-slider {
+  @apply w-11 h-6 bg-muted rounded-full relative transition-colors;
+}
+
+.toggle-slider::before {
+  content: '';
+  @apply absolute w-5 h-5 bg-white rounded-full top-0.5 left-0.5 transition-transform;
+}
+
+input[type="checkbox"]:checked + .toggle-slider {
+  @apply bg-primary;
+}
+
+input[type="checkbox"]:checked + .toggle-slider::before {
+  transform: translateX(20px);
+}
+
+/* Theme Grid */
+.theme-grid {
+  @apply grid gap-3;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+}
+
+.theme-option {
+  @apply p-4 border-2 border-transparent rounded-lg text-center cursor-pointer transition-all bg-muted/50;
+}
+
+.theme-option.active {
+  @apply border-primary bg-primary/10;
+}
+
+.theme-preview {
+  @apply text-2xl mb-2;
+}
+
+/* Range Inputs */
+input[type="range"] {
+  @apply w-full my-2 accent-primary;
+}
+
+.range-labels {
+  @apply flex justify-between text-xs text-muted-foreground;
+}
+
+/* Buttons */
+.btn-primary {
+  @apply bg-primary text-primary-foreground hover:bg-primary/90 px-5 py-2.5 rounded-md cursor-pointer;
+}
+
+.btn-secondary {
+  @apply bg-secondary text-secondary-foreground hover:bg-secondary/80 px-5 py-2.5 rounded-md cursor-pointer flex items-center gap-2;
+}
+
+.btn-danger {
+  @apply bg-destructive text-destructive-foreground hover:bg-destructive/90 px-5 py-2.5 rounded-md cursor-pointer;
+}
+
+.setting-actions {
+  @apply flex gap-3 mt-4;
+}
+
+.danger-zone {
+  @apply mt-8 border-t border-destructive/30 pt-4;
+}
+
+.privacy-links {
+  @apply mt-6 flex flex-col gap-2;
+}
+
+.checkbox-group {
+  @apply flex flex-col gap-2 mt-2;
+}
+
+.checkbox-group label {
+  @apply flex items-center gap-2 font-normal;
+}
+
+
+/* Responsive */
+@media (max-width: 768px) {
+  .settings-modal {
+    width: 95vw;
+    height: 95vh;
+  }
+  
+  .settings-tabs {
+    @apply flex-wrap;
+  }
+  
+  .theme-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
