@@ -1,264 +1,328 @@
-
 'use client';
 import { useState, useEffect, useRef } from 'react';
-import { Bot, Send, User2 } from 'lucide-react';
+import { Bot, Send, User2, Satellite, User, Rocket, Telescope, Microscope } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-// NASA Biology Knowledge Base - Comprehensive dataset from user prompt
+// Comprehensive NASA Knowledge Base
 const nasaKnowledgeBase = {
-    microgravity_plants: {
-        question: "What happens to plants in microgravity?",
-        answer: `NASA's research shows that plants in microgravity experience significant changes:
+    artemis: {
+        patterns: ["artemis", "moon mission", "lunar program", "return to moon"],
+        response: `**Artemis Program** - NASA's mission to return humans to the Moon and establish sustainable exploration.
 
-**Root Development**: Arabidopsis thaliana roots show altered growth patterns and gravitropic responses. Without gravity cues, roots grow in more random directions.
+**Key Goals:**
+• Land the first woman and first person of color on the Moon
+• Establish long-term lunar exploration
+• Test technologies for future Mars missions
+• Build the Lunar Gateway space station
 
-**Gene Expression**: Studies from the International Space Station reveal changes in gene expression related to:
-- Cell wall formation
-- Stress response pathways
-- Hormone signaling (auxin distribution)
+**Current Status:**
+• Artemis I: Completed uncrewed test flight (2022)
+• Artemis II: First crewed flight around Moon (planned 2025)
+• Artemis III: Lunar landing mission (planned 2026)
 
-**Practical Implications**: This research helps develop:
-- Better plant growth systems for long-duration missions
-- Food production for future Mars missions
-- Understanding fundamental plant biology
+**Technology:**
+• Space Launch System (SLS) rocket
+• Orion spacecraft
+• Lunar Gateway station
+• Commercial lunar landers
 
-*Source: NASA Plant Habitat experiments on ISS*`
+<div class="knowledge-source">Source: NASA Artemis Program Office</div>`
     },
-    
-    space_radiation: {
-        question: "How does space radiation affect DNA?",
-        answer: `Space radiation poses significant challenges to biological organisms:
 
-**Radiation Types in Space**:
-- Galactic Cosmic Rays (GCRs)
-- Solar Particle Events (SPEs)
-- Trapped radiation in Van Allen belts
+    james_webb: {
+        patterns: ["james webb", "webb telescope", "jwst", "space telescope"],
+        response: `**James Webb Space Telescope** - NASA's premier infrared observatory.
 
-**DNA Damage Effects**:
-- Double-strand breaks are more common
-- Complex DNA lesions that are harder to repair
-- Increased mutation rates
+**Key Capabilities:**
+• Observes in infrared to see first galaxies
+• 6.5-meter gold-coated primary mirror
+• Sunshield size of a tennis court
+• Operating at L2 Lagrange point
 
-**NASA's Findings**:
-- Mammalian cells show reduced repair efficiency in microgravity
-- Some organisms have enhanced DNA repair mechanisms
-- Radiation shielding effectiveness varies by material
+**Major Discoveries:**
+• Earliest galaxies ever observed
+• Detailed atmospheric studies of exoplanets
+• Star formation in nearby galaxies
+• Chemistry of distant planetary systems
 
-**Current Research**:
-- Developing better radiation protection
-- Understanding combined effects of radiation and microgravity
-- Identifying radiation-resistant organisms for space applications
+**Recent Findings:**
+• Carbon-based molecules in early universe
+• Water vapor in planet-forming disks
+• Complex organic molecules around young stars
 
-*Source: NASA Space Radiation Laboratory studies*`
+<div class="knowledge-source">Source: NASA JWST Science Team</div>`
     },
-    
-    microbes_space: {
-        question: "What is NASA studying about microbes in space?",
-        answer: `NASA's microbial research focuses on several key areas:
 
-**Microbial Behavior Changes**:
-- Some bacteria become more virulent in space
-- Altered antibiotic resistance patterns
-- Changes in biofilm formation
+    iss: {
+        patterns: ["international space station", "iss", "space station"],
+        response: `**International Space Station** - Orbiting laboratory and partnership achievement.
 
-**ISS Environmental Microbiology**:
-- Regular monitoring of spacecraft surfaces
-- Understanding microbial communities in closed systems
-- Developing cleaning and sterilization protocols
+**Research Areas:**
+• Human health in microgravity
+• Materials science
+• Earth and space observation
+• Technology development
+• Biology and biotechnology
 
-**Beneficial Applications**:
-- Waste processing using microbial systems
-- Air revitalization
-- Food production (fermentation, probiotics)
+**Recent Experiments:**
+• Plant growth in space (Veggie system)
+• Cancer research in microgravity
+• 3D printing of human tissue
+• Study of aging processes
 
-**Planetary Protection**:
-- Preventing forward contamination (Earth to other planets)
-- Preventing backward contamination (other planets to Earth)
-- Sterilization techniques for spacecraft
+**Partnership:**
+• NASA (United States)
+• Roscosmos (Russia)
+• ESA (Europe)
+• JAXA (Japan)
+• CSA (Canada)
 
-*Source: NASA Microbiology Laboratory research*`
+<div class="knowledge-source">Source: NASA ISS Program Office</div>`
     },
-    
-    life_support: {
-        question: "Tell me about life support systems",
-        answer: `NASA's Advanced Life Support Systems research includes:
 
-**Environmental Control**:
-- Air revitalization (CO2 removal, O2 production)
-- Temperature and humidity control
-- Trace contaminant removal
+    mars: {
+        patterns: ["mars", "red planet", "mars rover", "perseverance", "curiosity"],
+        response: `**Mars Exploration Program** - NASA's ongoing investigation of the Red Planet.
 
-**Water Recovery**:
-- Recycling wastewater (including urine)
-- Water purification technologies
-- Monitoring water quality
+**Current Rovers:**
+• **Perseverance** - Searching for signs of ancient life, collecting samples
+• **Curiosity** - Studying Martian climate and geology
 
-**Food Production**:
-- Plant growth systems (Veggie, Advanced Plant Habitat)
-- Nutrient delivery systems
-- Harvesting and food safety
+**Key Discoveries:**
+• Evidence of past water activity
+• Organic molecules in rocks
+• Seasonal methane variations
+• Ancient river delta in Jezero Crater
 
-**Current Systems on ISS**:
-- Environmental Control and Life Support System (ECLSS)
-- Water Recovery System
-- Oxygen Generation System
+**Future Missions:**
+• Mars Sample Return campaign
+• Human exploration planning
+• MOXIE experiment producing oxygen from CO2
 
-**Future Developments**:
-- Closed-loop systems for Mars missions
-- Integration of biological and physical systems
-- Reliability and maintenance optimization
-
-*Source: NASA Life Support Systems research*`
+<div class="knowledge-source">Source: NASA Mars Exploration Program</div>`
     },
-    
-    arabidopsis_research: {
-        question: "What NASA research exists on Arabidopsis?",
-        answer: `Arabidopsis thaliana is a model organism for NASA's plant biology research:
 
-**Key Experiments**:
-- **Plant Growth Investigations**: Studying root and shoot development in microgravity
-- **Gene Expression Analysis**: Identifying gravity-responsive genes
-- **Cell Wall Research**: Understanding plant structural changes
+    rockets: {
+        patterns: ["rocket", "sls", "space launch system", "how do rockets work"],
+        response: `**Rocket Science & NASA's Launch Systems**
 
-**Major Findings**:
-- Altered auxin distribution affects growth patterns
-- Changes in cell wall composition and mechanics
-- Stress response pathways are activated differently
+**Basic Principles:**
+• Newton's Third Law - action/reaction
+• Thrust generated by expelling mass
+• Rocket equation governs performance
 
-**ISS Facilities Used**:
-- Advanced Plant Habitat (APH)
-- Vegetable Production System (Veggie)
-- Biological Research in Canisters (BRIC)
+**NASA's Current Rockets:**
+• **SLS** - Most powerful rocket ever built, for Artemis missions
+• **Falcon** - Commercial crew missions to ISS
+• **Atlas V** - Science missions and satellites
 
-**Importance**:
-- Helps develop better crop plants for space
-- Provides insights for terrestrial agriculture
-- Understanding fundamental plant biology
+**Key Components:**
+• Propellant tanks (liquid hydrogen/oxygen)
+• Rocket engines (RS-25, Merlin, etc.)
+• Guidance and navigation systems
+• Payload fairings
 
-*Source: NASA Space Biology Program*`
+<div class="knowledge-source">Source: NASA Engineering Directorate</div>`
     },
-    
-    astronaut_health: {
-        question: "How does space affect astronaut health?",
-        answer: `NASA's Human Research Program studies these key effects:
 
-**Bone Density Loss**:
-- 1-2% bone mineral density loss per month in space
-- Similar to osteoporosis but reversible upon return
-- Exercise countermeasures help reduce loss
+    technology: {
+        patterns: ["nasa technology", "space technology", "inventions", "spinoff"],
+        response: `**NASA Technology Transfer** - Innovations benefiting life on Earth.
 
-**Muscle Atrophy**:
-- Rapid loss of muscle mass and strength
-- Affects postural muscles most significantly
-- Resistance exercise is primary countermeasure
+**Medical Advances:**
+• Digital imaging breast biopsy
+• Artificial heart pumps
+• Light-emitting diodes for wound healing
+• Cochlear implants
 
-**Vision Changes**:
-- Spaceflight Associated Neuro-ocular Syndrome (SANS)
-- Fluid shifts cause structural changes in eyes
-- Affects approximately 2/3 of astronauts
+**Public Safety:**
+• Firefighting equipment
+• Emergency response tools
+• Water purification systems
+• Radiation detection
 
-**Immune System**:
-- Altered immune cell function
-- Increased latent virus reactivation
-- Changes in inflammatory responses
+**Consumer Products:**
+• Memory foam mattresses
+• Scratch-resistant lenses
+• Athletic shoe designs
+• Wireless headsets
 
-**Radiation Risks**:
-- Increased cancer risk
-- Potential central nervous system effects
-- Cardiovascular disease risks
+**Environmental:**
+• Solar cell technology
+• Water recycling systems
+• Air quality monitors
+• Climate research tools
 
-*Source: NASA Human Research Program data*`
+<div class="related-topics">
+<strong>Related:</strong> Ask about specific NASA technologies like "spacesuit design" or "satellite technology"
+</div>`
     },
-    
-    iss_experiments: {
-        question: "What biology experiments are on the ISS?",
-        answer: `The International Space Station hosts numerous biology experiments:
 
-**Current Active Experiments**:
+    black_holes: {
+        patterns: ["black hole", "event horizon", "singularity"],
+        response: `**Black Hole Research** - NASA's study of these cosmic phenomena.
 
-**Plant Habitat-03**: 
-- Studies whether adaptations in one generation of plants grown in space can transfer to the next
+**Key NASA Missions:**
+• **Chandra X-ray Observatory** - Studies high-energy regions
+• **Hubble Space Telescope** - Observes effects on surroundings
+• **NuSTAR** - Looks at high-energy X-rays
+• **Swift** - Monitors gamma-ray bursts
 
-**Rodent Research**:
-- Examines effects of spaceflight on mammalian physiology
-- Studies muscle and bone loss countermeasures
+**Recent Discoveries:**
+• Supermassive black holes in galaxy centers
+• Gravitational wave detection (with LIGO)
+• Black hole mergers and growth
+• Accretion disk physics
 
-**Microbial Tracking**:
-- Monitors microorganisms aboard the ISS
-- Studies how microbes adapt to space environment
+**Notable Findings:**
+• First image of black hole shadow (Event Horizon Telescope)
+• Measurements of black hole spin
+• Study of relativistic jets
+• Black hole feeding mechanisms
 
-**BioNutrients**:
-- Demonstrates technology to produce key nutrients from yeast
-
-**Past Notable Experiments**:
-- **Veggie**: Fresh food production in space
-- **Twins Study**: Comprehensive study of identical twin astronauts
-- **Microbial Observatory**: Long-term microbial monitoring
-
-*Source: NASA ISS Science Reports*`
+<div class="knowledge-source">Source: NASA Astrophysics Division</div>`
     },
-    
-    mars_biology: {
-        question: "What biology research prepares us for Mars?",
-        answer: `NASA's Mars-focused biology research includes:
 
-**Radiation Protection**:
-- Studying Martian radiation environment
-- Developing effective shielding strategies
-- Understanding biological effects of Mars-level radiation
+    exoplanets: {
+        patterns: ["exoplanet", "alien planet", "habitable zone", "kepler", "tess"],
+        response: `**Exoplanet Research** - Search for planets beyond our solar system.
 
-**Life Support Systems**:
-- Testing closed-loop systems for longer missions
-- Developing reliable food production methods
-- Water recycling and air revitalization technologies
+**NASA Missions:**
+• **Kepler** - Found thousands of exoplanets
+• **TESS** - Surveying nearby bright stars
+• **James Webb** - Atmospheric characterization
+• **Hubble** - Follow-up observations
 
-**Human Factors**:
-- Psychological effects of long-duration isolation
-- Team dynamics in confined environments
-- Medical capabilities for Mars missions
+**Key Discoveries:**
+• Over 5,000 confirmed exoplanets
+• Planets in habitable zones
+• Variety of planet types
+• Atmospheric composition studies
 
-**Planetary Protection**:
-- Sterilizing spacecraft to prevent contamination
-- Protocols for handling potential Martian samples
-- Protecting Earth from backward contamination
+**Habitable Worlds:**
+• TRAPPIST-1 system with Earth-sized planets
+• Proxima Centauri b - nearest exoplanet
+• Kepler-452b - "Earth's cousin"
 
-**In-Situ Resource Utilization**:
-- Using Martian resources for life support
-- Potential for growing plants in Martian soil simulants
-- Water extraction from Martian environment
+<div class="knowledge-source">Source: NASA Exoplanet Exploration Program</div>`
+    },
 
-*Source: NASA Mars Exploration Program*`
+    earth_science: {
+        patterns: ["earth science", "climate change", "global warming", "weather", "climate"],
+        response: `**NASA Earth Science** - Studying our home planet from space.
+
+**Key Satellites:**
+• **Landsat** - Longest continuous space-based record of Earth's surface
+• **GRACE** - Measures Earth's gravity field
+• **ICESat** - Ice sheet elevation
+• **Aqua/Terra** - Comprehensive Earth observation
+
+**Research Areas:**
+• Climate change monitoring
+• Sea level rise
+• Deforestation tracking
+• Air quality assessment
+• Natural disaster monitoring
+
+**Recent Findings:**
+• Accelerated ice melt in polar regions
+• Changing precipitation patterns
+• Urban heat island effects
+• Ocean current changes
+
+<div class="knowledge-source">Source: NASA Earth Science Division</div>`
+    },
+
+    careers: {
+        patterns: ["career", "job", "internship", "work for nasa", "employment"],
+        response: `**NASA Careers & Opportunities**
+
+**Career Paths:**
+• Engineering (aerospace, mechanical, electrical)
+• Science (physics, astronomy, planetary science)
+• Technology (software, data science, AI)
+• Administration and support roles
+
+**How to Apply:**
+• USAJobs.gov for civil service positions
+• Contractor positions through partner companies
+• NASA Internships for students
+• Pathways Program for recent graduates
+
+**Educational Requirements:**
+• STEM degrees typically required
+• Advanced degrees for research positions
+• Relevant experience and skills
+
+**Internship Programs:**
+• NASA Internships (all centers)
+• NASA Community College Aerospace Scholars
+• Minority University Research and Education Project
+
+<div class="related-topics">
+<strong>Learn More:</strong> Visit NASA.gov/careers or ask about specific NASA centers
+</div>`
+    },
+
+    history: {
+        patterns: ["nasa history", "when was nasa founded", "space race"],
+        response: `**NASA History** - From inception to present.
+
+**Key Dates:**
+• 1958: NASA established by National Aeronautics and Space Act
+• 1961: Alan Shepard - first American in space
+• 1969: Apollo 11 - first Moon landing
+• 1981: First Space Shuttle flight
+• 1998: International Space Station assembly begins
+• 2020: Commercial Crew Program begins
+
+**Major Programs:**
+• Mercury - First Americans in space
+• Gemini - Spacecraft maneuvers and EVA
+• Apollo - Moon landings
+• Space Shuttle - Reusable spacecraft
+• ISS - International cooperation
+
+**Current Era:**
+• Artemis - Return to Moon
+• Commercial space partnerships
+• Mars exploration
+• Space technology development
+
+<div class="knowledge-source">Source: NASA History Office</div>`
     }
 };
 
 const getCurrentTime = () => {
     const now = new Date();
-    return now.getHours().toString().padStart(2, '0') + ':' + 
+    return now.getHours().toString().padStart(2, '0') + ':' +
            now.getMinutes().toString().padStart(2, '0');
 };
 
 const initialMessage = {
     role: 'assistant',
-    text: `Hello! I'm your NASA Biology & Space Research Assistant. I'm trained on NASA's official biology datasets and research papers. I can help you with questions about:
-
-• Microgravity effects on plants and organisms
-• Space radiation biology
-• Closed life support systems
-• Astrobiology and planetary protection
-• ISS biological experiments
-• NASA dataset information
-
-What would you like to know about NASA's biology research?`,
+    text: `<strong>Welcome to NASA Research Assistant!</strong><br><br>
+            I'm your comprehensive NASA knowledge resource. I can help you with:<br><br>
+            
+            • <span class="highlight">Mission Information</span> - Apollo, Artemis, ISS, Mars rovers, telescopes<br>
+            • <span class="highlight">Scientific Research</span> - Astrophysics, planetary science, Earth science, biology<br>
+            • <span class="highlight">Technology & Engineering</span> - Rockets, satellites, space suits, instruments<br>
+            • <span class="highlight">Astronomy & Space Science</span> - Black holes, exoplanets, solar system<br>
+            • <span class="highlight">NASA Programs</span> - Current and historical missions, research centers<br>
+            • <span class="highlight">Career & Education</span> - Opportunities, internships, STEM programs<br><br>
+            
+            What would you like to know about NASA today?`,
     time: getCurrentTime()
 };
 
 const suggestions = [
-    { question: "What happens to plants in microgravity?", label: "🌱 Plants in microgravity" },
-    { question: "How does space radiation affect DNA?", label: "🧬 Space radiation effects" },
-    { question: "What is NASA studying about microbes in space?", label: "🦠 Microbes in space" },
-    { question: "Tell me about life support systems", label: "🔬 Life support systems" }
+    { question: "Tell me about the Artemis program", label: "🌙 Artemis Program" },
+    { question: "What's new with the James Webb Telescope?", label: "🔭 James Webb" },
+    { question: "How do rockets work?", label: "🚀 Rocket Science" },
+    { question: "Latest Mars rover discoveries", label: "🔴 Mars Discoveries" },
+    { question: "NASA career opportunities", label: "👨‍🚀 Careers at NASA" },
+    { question: "International Space Station research", label: "🛰️ ISS Research" },
 ];
-
 
 export default function AiResearchCopilotPage() {
     const [messages, setMessages] = useState([initialMessage]);
@@ -270,7 +334,10 @@ export default function AiResearchCopilotPage() {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     };
 
-    useEffect(scrollToBottom, [messages, isTyping]);
+    useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, [messages, isTyping]);
+
 
     const handleSendMessage = () => {
         const trimmedInput = inputValue.trim();
@@ -284,132 +351,139 @@ export default function AiResearchCopilotPage() {
             const response = generateAIResponse(trimmedInput);
             setIsTyping(false);
             setMessages(prev => [...prev, { role: 'assistant', text: response, time: getCurrentTime() }]);
-        }, 1500 + Math.random() * 1000);
+        }, 1000 + Math.random() * 1000);
     };
-
+    
     const handleSuggestionClick = (question: string) => {
         setInputValue(question);
-        // We need to trigger send after state update
         setTimeout(() => document.getElementById('sendButton')?.click(), 0);
-    }
-    
+    };
+
     const generateAIResponse = (userMessage: string) => {
         const lowerMessage = userMessage.toLowerCase();
         
-        for (const [, data] of Object.entries(nasaKnowledgeBase)) {
-            if (lowerMessage.includes(data.question.toLowerCase()) || 
-                data.question.toLowerCase().includes(lowerMessage)) {
-                return data.answer;
-            }
-        }
-        
-        // Keyword matches
-        const keywords = [
-            { keys: ['plant', 'arabidopsis', 'root'], responseKey: 'arabidopsis_research' },
-            { keys: ['radiation', 'dna', 'genetic'], responseKey: 'space_radiation' },
-            { keys: ['microbe', 'bacteria', 'virus'], responseKey: 'microbes_space' },
-            { keys: ['life support', 'ecosystem', 'closed'], responseKey: 'life_support' },
-            { keys: ['astronaut', 'health', 'human'], responseKey: 'astronaut_health' },
-            { keys: ['iss', 'space station', 'experiment'], responseKey: 'iss_experiments' },
-            { keys: ['mars', 'red planet', 'martian'], responseKey: 'mars_biology' },
-            { keys: ['microgravity', 'zero gravity', 'weightless'], responseKey: 'microgravity_plants' },
-        ];
-
-        for(const {keys, responseKey} of keywords) {
-            if(keys.some(key => lowerMessage.includes(key))) {
-                return (nasaKnowledgeBase as any)[responseKey].answer;
+        for (const key in nasaKnowledgeBase) {
+            const entry = nasaKnowledgeBase[key as keyof typeof nasaKnowledgeBase];
+            for (const pattern of entry.patterns) {
+                if (lowerMessage.includes(pattern)) {
+                    return entry.response;
+                }
             }
         }
         
         // Default response
-        return `I'm specifically trained on NASA biology and space research datasets. I can help you with questions about:
+        return `I understand you're asking about NASA-related topics. While I have comprehensive knowledge about many NASA subjects, I want to make sure I give you the most accurate information.
 
-• Plant growth in microgravity (Arabidopsis, crop plants)
-• Space radiation effects on biological systems
-• Microbial behavior in space environments  
-• Life support systems and closed ecosystems
-• Astronaut health and physiology
-• ISS biological experiments
-• Mars mission preparation biology
-• Planetary protection protocols
+**I can help you with:**
 
-Could you please rephrase your question or ask about one of these NASA biology topics?`;
-    }
+<div class="related-topics">
+<strong>Mission Information:</strong> Artemis, ISS, Mars rovers, telescopes<br>
+<strong>Science Research:</strong> Astrophysics, planetary science, Earth science<br>
+<strong>Technology:</strong> Rockets, satellites, space technology spinoffs<br>
+<strong>Careers:</strong> Jobs, internships, educational opportunities<br>
+<strong>History:</strong> Apollo program, Space Shuttle, NASA's founding
+</div>
+
+Could you please rephrase your question or be more specific about what NASA topic you'd like to learn about? I'm here to provide detailed, accurate information about all aspects of NASA's work and research.`;
+    };
 
     return (
         <div className="flex justify-center items-center h-full bg-gradient-to-br from-[#0a1128] to-[#1a243d] p-4">
-            <div className="w-full max-w-4xl h-[90vh] bg-[#1a243d]/95 rounded-2xl shadow-2xl border border-[#2d3a5c] flex flex-col overflow-hidden">
-                <div className="bg-[#0b3d91]/90 p-5 text-center border-b border-[#2d3a5c]">
-                    <h1 className="text-2xl font-bold mb-1">🚀 NASA BioSpace Assistant</h1>
-                    <p className="text-sm text-[#b8c2d6]">Ask me anything about NASA biology and space research</p>
+            <div className="w-full max-w-5xl h-[90vh] bg-[#1a243d]/95 rounded-2xl shadow-2xl border border-[#2d3a5c] flex flex-col overflow-hidden">
+                <div className="bg-[#0b3d91]/90 p-6 text-center border-b border-[#2d3a5c]">
+                    <h1 className="text-3xl font-bold mb-2 flex items-center justify-center gap-3">🚀 NASA Research Assistant</h1>
+                    <p className="text-lg text-[#b8c2d6] max-w-2xl mx-auto leading-normal">Ask me anything about NASA missions, research, technology, astronomy, or space exploration.</p>
                 </div>
 
-                <div className="flex-1 p-5 overflow-y-auto space-y-4">
+                <div className="flex-1 p-6 overflow-y-auto space-y-5">
                     {messages.map((msg, index) => (
-                        <div key={index} className={cn('flex gap-3 max-w-[85%] animate-[fadeIn_0.3s_ease-in]', msg.role === 'user' ? 'self-end flex-row-reverse' : 'self-start')}>
-                            <div className={cn('w-10 h-10 rounded-full flex items-center justify-center font-bold flex-shrink-0 text-lg', msg.role === 'user' ? 'bg-[#fc3d21]' : 'bg-[#0b3d91]')}>
-                                {msg.role === 'user' ? '👨‍🚀' : '🤖'}
+                        <div key={index} className={cn('flex gap-4 max-w-[90%] animate-[fadeIn_0.4s_ease-in]', msg.role === 'user' ? 'self-end flex-row-reverse' : 'self-start')}>
+                            <div className={cn('w-11 h-11 rounded-full flex items-center justify-center font-bold flex-shrink-0 text-xl', msg.role === 'user' ? 'bg-[#fc3d21] shadow-[0_4px_12px_rgba(252,61,33,0.3)]' : 'bg-[#0b3d91] shadow-[0_4px_12px_rgba(11,61,145,0.3)]')}>
+                                {msg.role === 'user' ? '👨‍🚀' : '🛰️'}
                             </div>
-                            <div className={cn('bg-white/10 p-4 rounded-2xl', msg.role === 'user' ? 'bg-[#0b3d91] rounded-tr-md' : 'rounded-tl-md')}>
-                                <p className="text-base whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: msg.text.replace(/\n/g, '<br/>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }} />
+                            <div className={cn('bg-white/5 p-4 rounded-2xl backdrop-blur-md', msg.role === 'user' ? 'bg-gradient-to-br from-[#0b3d91] to-[#1e5bc9] rounded-tr-md shadow-[0_4px_15px_rgba(11,61,145,0.3)]' : 'rounded-tl-md')}>
+                                <div className="text-base leading-relaxed whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: msg.text }} />
                                 <p className="text-xs text-[#b8c2d6] mt-2 text-right">{msg.time}</p>
                             </div>
                         </div>
                     ))}
                     {isTyping && (
-                         <div className="flex items-center gap-3 self-start">
-                             <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold flex-shrink-0 text-lg bg-[#0b3d91]">🤖</div>
-                            <div className="flex items-center gap-2 p-4 bg-white/10 rounded-2xl rounded-tl-md">
-                                <div className="w-2 h-2 rounded-full bg-[#b8c2d6] animate-[typing_1.4s_infinite_ease-in-out] [animation-delay:-0.32s]"></div>
-                                <div className="w-2 h-2 rounded-full bg-[#b8c2d6] animate-[typing_1.4s_infinite_ease-in-out] [animation-delay:-0.16s]"></div>
-                                <div className="w-2 h-2 rounded-full bg-[#b8c2d6] animate-[typing_1.4s_infinite_ease-in-out]"></div>
+                         <div className="flex items-center gap-4 self-start">
+                             <div className="w-11 h-11 rounded-full flex items-center justify-center font-bold flex-shrink-0 text-xl bg-[#0b3d91] shadow-[0_4px_12px_rgba(11,61,145,0.3)]">🛰️</div>
+                            <div className="flex items-center gap-2 p-4 bg-white/5 rounded-2xl rounded-tl-md backdrop-blur-md">
+                                <div className="w-2.5 h-2.5 rounded-full bg-[#b8c2d6] animate-[typing_1.4s_infinite_ease-in-out] [animation-delay:-0.32s]"></div>
+                                <div className="w-2.5 h-2.5 rounded-full bg-[#b8c2d6] animate-[typing_1.4s_infinite_ease-in-out] [animation-delay:-0.16s]"></div>
+                                <div className="w-2.5 h-2.5 rounded-full bg-[#b8c2d6] animate-[typing_1.4s_infinite_ease-in-out]"></div>
+                                <span className="ml-2 text-[#b8c2d6] text-sm">NASA Assistant is researching...</span>
                             </div>
                          </div>
                     )}
                     <div ref={messagesEndRef} />
                 </div>
 
-                <div className="p-5 border-t border-[#2d3a5c] bg-[#1a243d]/80">
-                    <div className="flex flex-wrap gap-2 mb-4">
+                <div className="p-6 border-t border-[#2d3a5c] bg-[#1a243d]/80 backdrop-blur-md">
+                    <div className="flex flex-wrap justify-center gap-3 mb-5">
                         {suggestions.map((suggestion, index) => (
                             <button
                                 key={index}
                                 onClick={() => handleSuggestionClick(suggestion.question)}
-                                className="bg-[#0b3d91]/30 border border-[#2d3a5c] text-[#b8c2d6] px-4 py-2 rounded-full text-sm cursor-pointer transition-all hover:bg-[#0b3d91]/50 hover:text-white hover:-translate-y-0.5"
+                                className="bg-[#0b3d91]/25 border border-[#2d3a5c] text-[#b8c2d6] px-5 py-3 rounded-full text-sm cursor-pointer transition-all hover:bg-[#0b3d91]/40 hover:text-white hover:-translate-y-0.5 shadow-md"
                             >
                                 {suggestion.label}
                             </button>
                         ))}
                     </div>
-                    <div className="flex gap-3 items-center">
+                    <div className="flex gap-4 items-center">
                         <input
                             type="text"
                             id="userInput"
                             value={inputValue}
                             onChange={(e) => setInputValue(e.target.value)}
                             onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                            placeholder="Ask about NASA biology research..."
+                            placeholder="Ask any NASA-related question..."
                             autoComplete="off"
-                            className="flex-1 px-5 py-3 bg-white/10 border border-[#2d3a5c] rounded-full text-white placeholder:text-[#b8c2d6] focus:outline-none focus:border-[#0b3d91] focus:bg-white/15 transition-all"
+                            className="flex-1 px-6 py-4 bg-white/10 border border-[#2d3a5c] rounded-full text-white placeholder:text-[#b8c2d6] focus:outline-none focus:border-[#0b3d91] focus:bg-white/15 focus:ring-2 focus:ring-[#0b3d91]/50 transition-all"
                         />
                         <button
                             id="sendButton"
                             onClick={handleSendMessage}
-                            className="w-12 h-12 rounded-full bg-[#0b3d91] text-white flex items-center justify-center transition-all hover:bg-[#1e5bc9] hover:scale-105 active:scale-95"
+                            className="w-14 h-14 rounded-full bg-gradient-to-br from-[#0b3d91] to-[#1e5bc9] text-white flex items-center justify-center transition-all hover:from-[#1e5bc9] hover:to-[#2a6de6] hover:scale-105 hover:shadow-lg hover:shadow-[#0b3d91]/40 active:scale-95"
                         >
-                            <Send size={20} />
+                            <Send size={22} />
                         </button>
                     </div>
                 </div>
             </div>
             <style jsx global>{`
                 @keyframes fadeIn {
-                    from { opacity: 0; transform: translateY(10px); }
-                    to { opacity: 1; transform: translateY(0); }
+                    from { opacity: 0; transform: translateY(15px) scale(0.95); }
+                    to { opacity: 1; transform: translateY(0) scale(1); }
                 }
                 @keyframes typing {
                     0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; }
                     40% { transform: scale(1); opacity: 1; }
+                }
+                .knowledge-source {
+                    background: rgba(26, 147, 111, 0.15);
+                    border-left: 4px solid #1a936f;
+                    padding: 12px 16px;
+                    margin: 12px 0;
+                    border-radius: 0 8px 8px 0;
+                    font-size: 0.85rem;
+                }
+                .related-topics {
+                    background: rgba(255, 193, 7, 0.1);
+                    border: 1px solid rgba(255, 193, 7, 0.3);
+                    padding: 15px;
+                    margin: 15px 0;
+                    border-radius: 10px;
+                    font-size: 0.9rem;
+                }
+                .highlight {
+                    background: rgba(255, 193, 7, 0.2);
+                    padding: 2px 6px;
+                    border-radius: 4px;
+                    font-weight: 600;
                 }
             `}</style>
         </div>
