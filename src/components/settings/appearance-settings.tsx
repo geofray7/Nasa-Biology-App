@@ -72,27 +72,27 @@ export const AppearanceSettings = ({ settings, onChange }: AppearanceSettingsPro
 
       <div className="setting-item">
         <label className="toggle-label">
+          <span className="toggle-slider"></span>
           <input 
             type="checkbox" 
             className="hidden"
             checked={settings.reduceMotion}
             onChange={(e) => onChange({...settings, reduceMotion: e.target.checked})}
           />
-          <span className="toggle-slider"></span>
-          Reduce motion (accessibility)
+          <span>Reduce motion (accessibility)</span>
         </label>
       </div>
 
       <div className="setting-item">
         <label className="toggle-label">
+           <span className="toggle-slider"></span>
           <input 
             type="checkbox" 
             className="hidden"
             checked={settings.showGraphsInline}
             onChange={(e) => onChange({...settings, showGraphsInline: e.target.checked})}
           />
-          <span className="toggle-slider"></span>
-          Show graphs in messages
+          <span>Show graphs in messages</span>
         </label>
       </div>
     </div>

@@ -14,28 +14,28 @@ export const PrivacySettings = ({ settings, onChange }: PrivacySettingsProps) =>
 
       <div className="setting-item">
         <label className="toggle-label">
+          <span className="toggle-slider"></span>
           <input 
             type="checkbox" 
             className="hidden"
             checked={settings.analytics}
             onChange={(e) => onChange({...settings, analytics: e.target.checked})}
           />
-          <span className="toggle-slider"></span>
-          Allow anonymous usage analytics
+          <span>Allow anonymous usage analytics</span>
         </label>
         <small className="text-muted-foreground text-xs">Help improve NASA chatbot by sharing usage data</small>
       </div>
 
       <div className="setting-item">
         <label className="toggle-label">
+          <span className="toggle-slider"></span>
           <input 
             type="checkbox" 
             className="hidden"
             checked={settings.autoUpdate}
             onChange={(e) => onChange({...settings, autoUpdate: e.target.checked})}
           />
-          <span className="toggle-slider"></span>
-          Automatic updates
+          <span>Automatic updates</span>
         </label>
       </div>
 

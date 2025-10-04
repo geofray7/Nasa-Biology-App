@@ -20,27 +20,27 @@ export const AudioSettings = ({ settings, onChange }: AudioSettingsProps) => {
 
       <div className="setting-item">
         <label className="toggle-label">
+          <span className="toggle-slider"></span>
           <input 
             type="checkbox" 
             className="hidden"
             checked={settings.voiceResponses}
             onChange={(e) => onChange({...settings, voiceResponses: e.target.checked})}
           />
-          <span className="toggle-slider"></span>
-          Enable voice responses
+          <span>Enable voice responses</span>
         </label>
       </div>
 
       <div className="setting-item">
         <label className="toggle-label">
+          <span className="toggle-slider"></span>
           <input 
             type="checkbox" 
             className="hidden"
             checked={settings.soundEffects}
             onChange={(e) => onChange({...settings, soundEffects: e.target.checked})}
           />
-          <span className="toggle-slider"></span>
-          Enable sound effects
+          <span>Enable sound effects</span>
         </label>
       </div>
 
