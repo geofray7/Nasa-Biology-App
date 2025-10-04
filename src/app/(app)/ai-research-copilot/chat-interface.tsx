@@ -188,7 +188,7 @@ export function ChatInterface() {
       formRef.current?.reset();
       setLastQuery('');
     }
-  }, [state]);
+  }, [state, pending, messages]);
 
   const handleAction = (formData: FormData) => {
     const query = formData.get('query') as string;
