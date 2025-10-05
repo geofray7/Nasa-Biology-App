@@ -7,6 +7,7 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarFooter,
+  SidebarSeparator,
 } from '@/components/ui/sidebar';
 import {
   Rocket,
@@ -19,11 +20,16 @@ import {
   Users,
   Trophy,
   Code2,
+  LogIn,
+  UserPlus,
+  LogOut,
+  User as UserIcon,
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Separator } from './ui/separator';
+import { useAuth, useUser } from '@/firebase';
+import { signOut } from 'firebase/auth';
 
 export const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -55,6 +61,8 @@ export const navItems = [
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const { user } = useUser();
+  const auth = useAuth();
 
   return (
     <Sidebar>
@@ -79,23 +87,58 @@ export function AppSidebar() {
           </SidebarMenuItem>
         ))}
       </SidebarMenu>
-      <Separator className="my-2" />
+      <SidebarSeparator className="my-2" />
       <SidebarFooter>
-        <div className="flex items-center gap-3 p-2">
-          <Avatar>
-            <AvatarImage
-              src="https://picsum.photos/seed/user/40/40"
-              data-ai-hint="profile picture"
-            />
-            <AvatarFallback>RD</AvatarFallback>
-          </Avatar>
-          <div className="flex flex-col overflow-hidden">
-            <span className="truncate text-sm font-semibold">Dr. Reed</span>
-            <span className="truncate text-xs text-muted-foreground">
-              Researcher
-            </span>
-          </div>
-        </div>
+        {user ? (
+          <>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton as={Link} href="/profile" tooltip="Profile">
+                  <UserIcon />
+                  <span>Profile</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton onClick={() => signOut(auth)} tooltip="Sign Out">
+                  <LogOut />
+                  <span>Sign Out</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+            <SidebarSeparator className="my-2" />
+            <div className="flex items-center gap-3 p-2">
+              <Avatar>
+                <AvatarImage src={user.photoURL ?? ''} data-ai-hint="profile picture" />
+                <AvatarFallback>
+                  {user.displayName?.charAt(0) ?? user.email?.charAt(0)}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col overflow-hidden">
+                <span className="truncate text-sm font-semibold">
+                  {user.displayName ?? 'Explorer'}
+                </span>
+                <span className="truncate text-xs text-muted-foreground">
+                  {user.email}
+                </span>
+              </div>
+            </div>
+          </>
+        ) : (
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton as={Link} href="/login" tooltip="Sign In">
+                <LogIn />
+                <span>Sign In</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton as={Link} href="/signup" tooltip="Sign Up">
+                <UserPlus />
+                <span>Sign Up</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        )}
       </SidebarFooter>
     </Sidebar>
   );

@@ -4,18 +4,27 @@ import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/app-sidebar';
 import { AppHeader } from '@/components/app-header';
 import { SettingsProvider, useSettingsContext } from '@/hooks/use-settings.tsx';
-import { SettingsModal } from '@/components/settings-modal';
-import { FirebaseClientProvider } from '@/firebase';
+import { FirebaseClientProvider, useUser } from '@/firebase';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
-function AppLayoutContent({ children }: { children: ReactNode }) {
-  const { settings, updateSettings, isLoaded } = useSettingsContext();
+function ProtectedContent({ children }: { children: ReactNode }) {
+  const { isLoaded, settings } = useSettingsContext();
+  const { user, isUserLoading } = useUser();
+  const router = useRouter();
 
-  if (!isLoaded) {
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      router.push('/login');
+    }
+  }, [isUserLoading, user, router]);
+
+  if (!isLoaded || isUserLoading || !user) {
     return (
       <div className="flex items-center justify-center h-screen bg-background text-foreground">
         <div className="flex flex-col items-center gap-4">
           <div className="animate-spin text-4xl">🚀</div>
-          <p>Initializing NASA Systems...</p>
+          <p>Authenticating & Initializing NASA Systems...</p>
         </div>
       </div>
     );
@@ -32,17 +41,15 @@ function AppLayoutContent({ children }: { children: ReactNode }) {
           </div>
         </SidebarInset>
       </SidebarProvider>
-      <SettingsModal />
     </div>
   );
 }
-
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   return (
     <FirebaseClientProvider>
       <SettingsProvider>
-        <AppLayoutContent>{children}</AppLayoutContent>
+        <ProtectedContent>{children}</ProtectedContent>
       </SettingsProvider>
     </FirebaseClientProvider>
   );

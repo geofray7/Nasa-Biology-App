@@ -159,11 +159,44 @@
         "implications",
         "reference"
       ]
+    },
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Represents a user's profile information.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "The user's unique ID." },
+        "email": { "type": "string", "format": "email", "description": "The user's email address." },
+        "displayName": { "type": "string", "description": "The user's display name." },
+        "photoURL": { "type": "string", "format": "uri", "description": "URL of the user's profile picture." },
+        "bio": { "type": "string", "description": "A short biography of the user." },
+        "role": { "type": "string", "enum": ["astronaut", "scientist", "researcher"], "description": "The user's role in the system." },
+        "mission": { "type": "string", "description": "The user's current mission." },
+        "specialization": { "type": "string", "description": "The user's field of specialization." },
+        "joinedDate": { "type": "string", "format": "date-time", "description": "The date the user joined." },
+        "lastLogin": { "type": "string", "format": "date-time", "description": "The user's last login date." },
+        "isOnline": { "type": "boolean", "description": "Indicates if the user is currently online." }
+      },
+      "required": ["uid", "email", "displayName"]
+    },
+    "UserStats": {
+      "title": "User Stats",
+      "description": "Statistics and achievements for a user.",
+      "type": "object",
+      "properties": {
+        "experimentsCompleted": { "type": "number", "description": "Number of experiments completed." },
+        "dnaAnalyses": { "type": "number", "description": "Number of DNA analyses performed." },
+        "healthEntries": { "type": "number", "description": "Number of health data entries." },
+        "badges": { "type": "array", "items": { "type": "string" }, "description": "List of badges earned." },
+        "achievements": { "type": "object", "description": "Map of unlocked achievements." }
+      }
     }
   },
   "auth": {
     "providers": [
-      "anonymous"
+      "anonymous",
+      "email",
+      "google.com"
     ]
   },
   "firestore": {
@@ -171,28 +204,36 @@
       {
         "path": "/genes/{geneId}",
         "definition": {
-          "schema": {
-            "$ref": "#/entities/Gene"
-          },
+          "schema": { "$ref": "#/entities/Gene" },
           "description": "Stores gene data. Readable by all authenticated users. Writable by admins only."
         }
       },
       {
         "path": "/users/{userId}/dna_analyses/{analysisId}",
         "definition": {
-          "schema": {
-            "$ref": "#/entities/DnaAnalysis"
-          },
+          "schema": { "$ref": "#/entities/DnaAnalysis" },
           "description": "Stores DNA analysis data for each user. Users can only read/write their own analysis data."
         }
       },
       {
         "path": "/space_research/{studyId}",
         "definition": {
-          "schema": {
-            "$ref": "#/entities/SpaceResearch"
-          },
+          "schema": { "$ref": "#/entities/SpaceResearch" },
           "description": "Stores space research data. Readable by all authenticated users. Writable by admins only."
+        }
+      },
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "schema": { "$ref": "#/entities/UserProfile" },
+          "description": "Stores user profile information. Users can read all profiles but only write to their own."
+        }
+      },
+      {
+        "path": "/user_stats/{userId}",
+        "definition": {
+          "schema": { "$ref": "#/entities/UserStats" },
+          "description": "Stores user statistics. Only readable and writable by the owner."
         }
       }
     ]
