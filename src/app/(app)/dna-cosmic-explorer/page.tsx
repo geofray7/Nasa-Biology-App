@@ -162,6 +162,10 @@ const DNAExplorerPage = () => {
       setGeneResults([]);
       return;
     }
+    if (!user) {
+        toast({ variant: "destructive", title: "Authentication Required", description: "You must be signed in to search for genes." });
+        return;
+    }
     setIsGeneSearching(true);
     try {
       const genesRef = collection(firestore, 'genes');
@@ -322,8 +326,10 @@ const DNAExplorerPage = () => {
                 onChange={(e) => setGeneSearchTerm(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleGeneSearch()}
               />
-              <Button onClick={handleGeneSearch} disabled={isGeneSearching}>
+              <Button onClick={handleGeneSearch} disabled={isGeneSearching || !user}>
                 {isGeneSearching ? <Loader className="animate-spin" /> : <Search />}
+                <span className="sr-only">Search</span>
+                 {!user && <span className="ml-2">Login to Search</span>}
               </Button>
             </div>
             <ScrollArea className="h-64 space-y-2">
@@ -441,5 +447,3 @@ const Stat = ({title, value}: {title:string, value: string|number}) => (
 );
 
 export default DNAExplorerPage;
-
-    
