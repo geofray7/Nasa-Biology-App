@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { useUser, useAuth, useFirestore } from '@/firebase';
+import { useUser, useAuth, useFirestore, FirestorePermissionError, errorEmitter } from '@/firebase';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { updateProfile } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
@@ -84,27 +84,37 @@ function ProfilePageContent() {
       const handleSaveProfile = async () => {
         if (!user) return;
     
-        try {
-          if(auth.currentUser) {
-            await updateProfile(auth.currentUser, {
-              displayName: profile.displayName
-            });
-          }
-
-          await updateDoc(doc(firestore, 'users', user.uid), {
+        const profileUpdates = {
             displayName: profile.displayName,
             bio: profile.bio,
             role: profile.role,
             specialization: profile.specialization,
             lastUpdated: new Date()
-          });
-    
-          setIsEditing(false);
-          toast({ title: 'Success', description: 'Profile updated successfully!' });
-        } catch (error) {
-          console.error('Error updating profile:', error);
-          toast({ variant: 'destructive', title: 'Error', description: 'Could not update profile.' });
+        };
+
+        if(auth.currentUser) {
+            updateProfile(auth.currentUser, {
+                displayName: profile.displayName
+            }).catch(authError => {
+                console.error("Failed to update auth profile:", authError);
+                toast({ variant: 'destructive', title: 'Auth Error', description: 'Could not update display name.' });
+            });
         }
+
+        const userDocRef = doc(firestore, 'users', user.uid);
+        
+        updateDoc(userDocRef, profileUpdates)
+        .then(() => {
+            setIsEditing(false);
+            toast({ title: 'Success', description: 'Profile updated successfully!' });
+        })
+        .catch(error => {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: userDocRef.path,
+                operation: 'update',
+                requestResourceData: profileUpdates,
+            }));
+        });
       };
     
     if (isUserLoading || isLoading || !user) {
