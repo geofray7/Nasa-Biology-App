@@ -1,4 +1,3 @@
-
 'use client';
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -348,28 +347,8 @@ const VirtualLab = () => {
           </CardContent>
         </Card>
       </div>
-
-       <div className="mt-8 bg-gradient-to-r from-green-500/80 to-blue-600/80 rounded-2xl p-6 text-white">
-          <h3 className="text-xl font-bold mb-3">🎯 Demo This for Judges:</h3>
-          <div className="grid md:grid-cols-3 gap-4 text-sm">
-            <div>
-              <strong>1. Plant Growth Demo</strong>
-              <p>Set gravity to 0.1g → See 30% growth reduction</p>
-            </div>
-            <div>
-              <strong>2. Radiation Demo</strong>
-              <p>Set gravity to 0g → See high radiation risk</p>
-            </div>
-            <div>
-              <strong>3. Compare Environments</strong>
-              <p>Earth vs Moon vs Mars growth rates</p>
-            </div>
-          </div>
-        </div>
     </div>
   );
 };
 
 export default VirtualLab;
-
-    
