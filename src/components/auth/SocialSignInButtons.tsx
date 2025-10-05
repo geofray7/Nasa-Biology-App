@@ -6,8 +6,8 @@ import {
     linkWithPopup,
     UserCredential
 } from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
-import { useAuth, useFirestore, useUser } from '@/firebase';
+import { doc, getDoc } from 'firebase/firestore';
+import { useAuth, useFirestore, useUser, setDocumentNonBlocking } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 
@@ -41,8 +41,7 @@ export function SocialSignInButtons() {
         const userDoc = await getDoc(userDocRef);
 
         if (!userDoc.exists()) {
-            // Create user document in Firestore for new user
-            await setDoc(userDocRef, {
+            const userProfileData = {
                 uid: user.uid,
                 email: user.email,
                 displayName: user.displayName,
@@ -53,25 +52,27 @@ export function SocialSignInButtons() {
                 lastLogin: new Date(),
                 isOnline: true,
                 isGuest: false,
-            });
+            };
+            setDocumentNonBlocking(userDocRef, userProfileData, { merge: false });
 
-            // Create user stats document
-            await setDoc(doc(firestore, 'user_stats', user.uid), {
+            const userStatsRef = doc(firestore, 'user_stats', user.uid);
+            const userStatsData = {
                 experimentsCompleted: 0,
                 dnaAnalyses: 0,
                 healthEntries: 0,
                 badges: ["New Explorer"],
                 achievements: {}
-            });
+            };
+            setDocumentNonBlocking(userStatsRef, userStatsData, { merge: false });
         } else {
-             // Update existing user's info
-             await setDoc(userDocRef, {
+             const updateData = {
                 lastLogin: new Date(),
                 isOnline: true,
-                isGuest: false, // Ensure guest status is removed on full login
-                displayName: user.displayName, // Update display name from Google
-                photoURL: user.photoURL, // Update photo from Google
-             }, { merge: true });
+                isGuest: false,
+                displayName: user.displayName,
+                photoURL: user.photoURL,
+             };
+             setDocumentNonBlocking(userDocRef, updateData, { merge: true });
         }
     };
 
