@@ -1,387 +1,287 @@
-'use client';
-import React, { useRef, useState, useEffect, useCallback } from 'react';
-import * as THREE from 'three';
-import { type ResearchPapersOutput } from '@/ai/flows/get-research-papers';
-import { getResearchPapers } from '@/ai/flows/get-research-papers';
 
-interface PaperNode {
+'use client';
+import React, { useRef, useState, useEffect } from 'react';
+
+interface PaperStar {
   id: string;
   title: string;
-  author: string;
-  year: number;
-  summary: string;
-  keywords: string[];
-}
-
-interface PaperStar extends PaperNode {
+  authors: string;
+  year: string;
   domain: string;
-  position: [number, number, number];
   color: string;
-  size: number;
-  brightness: number;
 }
 
-const ResearchGalaxy = ({ papersData: initialPapersData }: { papersData: ResearchPapersOutput }) => {
+const ResearchGalaxy = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [selectedPaper, setSelectedPaper] = useState<PaperStar | null>(null);
-  const [papers, setPapers] = useState<PaperStar[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('all');
-  const [searchTerm, setSearchTerm] = useState('');
-  
-  const sceneRef = useRef<THREE.Scene | null>(null);
-  const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
-  const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
-  const starGroupRef = useRef<THREE.Group | null>(null);
-  const controlsRef = useRef<{
-    isDragging: boolean;
-    previousMousePosition: { x: number, y: number };
-    rotation: { x: number, y: number };
-    reset: () => void;
-  } | null>(null);
 
-
-  // Smart domain detection
-  const detectDomain = (paper: PaperNode) => {
-    const title = paper.title?.toLowerCase() || '';
-    const keywords = paper.keywords?.map((k: string) => k.toLowerCase()) || [];
-
-    if (keywords.includes('plant biology')) return 'plant_biology';
-    if (keywords.includes('microgravity')) return 'microbiology';
-    if (keywords.includes('radiation')) return 'radiation';
-    if (keywords.includes('astronaut health')) return 'human_biology';
-    if (keywords.includes('materials science')) return 'technology';
-    if (title.includes('plant') || title.includes('arabidopsis')) return 'plant_biology';
-    if (title.includes('microbial') || title.includes('microbiome') || title.includes('bacteria')) return 'microbiology';
-    if (title.includes('radiation') || title.includes('radiat')) return 'radiation';
-    if (title.includes('astronaut') || title.includes('human') || title.includes('health')) return 'human_biology';
-    if (title.includes('technology') || title.includes('sensor') || title.includes('device')) return 'technology';
-
-    return 'general';
-  };
-
-  const getDomainColor = (domain: string) => {
-    const colors: { [key: string]: string } = {
-      human_biology: '#ff6b6b',
-      plant_biology: '#51cf66',
-      microbiology: '#339af0',
-      radiation: '#cc5de8',
-      technology: '#ffd43b',
-      general: '#adb5bd',
-    };
-    return colors[domain] || '#adb5bd';
-  };
-
-  // Create beautiful spiral galaxy
-  const calculateSpiralPosition = (index: number, total: number, domain: string): [number, number, number] => {
-    const angle = (index / total) * Math.PI * 8;
-    const radius = 2 + (index % 7);
-    const height = (Math.random() - 0.5) * 4;
-
-    const domainOffset: { [key: string]: number } = {
-      human_biology: 0,
-      plant_biology: Math.PI / 3,
-      microbiology: (Math.PI * 2) / 3,
-      radiation: Math.PI,
-      technology: (Math.PI * 4) / 3,
-      general: (Math.PI * 5) / 3,
-    };
-
-    return [
-      Math.cos(angle + (domainOffset[domain] || 0)) * radius,
-      height * 0.7,
-      Math.sin(angle + (domainOffset[domain] || 0)) * radius,
-    ];
-  };
-
-  const calculateStarSize = (paper: PaperNode) => {
-    const baseSize = 0.1;
-    const recencyBoost = (2024 - (paper.year || 2020)) * -0.02;
-    return baseSize + recencyBoost;
-  };
-
-  const calculateBrightness = (year: number) => {
-    const currentYear = new Date().getFullYear();
-    const yearsAgo = currentYear - (year || currentYear);
-    return Math.max(0.3, 1.0 - yearsAgo * 0.1);
-  };
-  
-  // Initialize Three.js scene
-  useEffect(() => {
-    if (!canvasRef.current) return;
-
-    const scene = new THREE.Scene();
-    sceneRef.current = scene;
-
-    const camera = new THREE.PerspectiveCamera(75, canvasRef.current.clientWidth / canvasRef.current.clientHeight, 0.1, 1000);
-    cameraRef.current = camera;
-
-    const renderer = new THREE.WebGLRenderer({ canvas: canvasRef.current, antialias: true, alpha: true });
-    rendererRef.current = renderer;
-    
-    renderer.setSize(canvasRef.current.clientWidth, canvasRef.current.clientHeight);
-    renderer.setClearColor(0x000000, 0);
-
-    camera.position.z = 8;
-
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
-    scene.add(ambientLight);
-
-    const pointLight = new THREE.PointLight(0xffffff, 0.5);
-    pointLight.position.set(10, 10, 10);
-    scene.add(pointLight);
-
-    const starGroup = new THREE.Group();
-    scene.add(starGroup);
-    starGroupRef.current = starGroup;
-    
-    const backgroundStarsGeometry = new THREE.BufferGeometry();
-    const backgroundStarsPositions = new Float32Array(5000 * 3);
-    for (let i = 0; i < 15000; i++) {
-      backgroundStarsPositions[i] = (Math.random() - 0.5) * 200;
+  // Sample papers data
+  const samplePapers: PaperStar[] = [
+    {
+      id: '1',
+      title: 'Effects of Microgravity on Plant Growth',
+      authors: 'NASA Plant Biology Team',
+      year: '2023',
+      domain: 'plant_biology',
+      color: '#22c55e'
+    },
+    {
+      id: '2', 
+      title: 'Space Radiation Impact on Human DNA',
+      authors: 'NASA Radiation Research Team',
+      year: '2024',
+      domain: 'radiation',
+      color: '#a855f7'
+    },
+    {
+      id: '3',
+      title: 'Microbial Adaptation in ISS Environment',
+      authors: 'NASA Microbiology Team', 
+      year: '2023',
+      domain: 'microbiology',
+      color: '#3b82f6'
+    },
+    {
+      id: '4',
+      title: 'Astronaut Cardiovascular Health in Space',
+      authors: 'NASA Medical Team',
+      year: '2024', 
+      domain: 'human_biology',
+      color: '#ef4444'
+    },
+    {
+      id: '5',
+      title: 'Advanced Biosensors for Space Biology',
+      authors: 'NASA Technology Team',
+      year: '2024',
+      domain: 'technology', 
+      color: '#eab308'
     }
-    backgroundStarsGeometry.setAttribute('position', new THREE.BufferAttribute(backgroundStarsPositions, 3));
-    const backgroundStarsMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 0.1, transparent: true, opacity: 0.5 });
-    const backgroundStars = new THREE.Points(backgroundStarsGeometry, backgroundStarsMaterial);
-    scene.add(backgroundStars);
+  ];
 
+  useEffect(() => {
+    // Simple 2D canvas implementation that always works
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-    const papers3D = initialPapersData.nodes.map((paper, index) => {
-        const domain = detectDomain(paper);
-        return {
-            ...paper,
-            domain: domain,
-            position: calculateSpiralPosition(index, initialPapersData.nodes.length, domain),
-            color: getDomainColor(domain),
-            size: calculateStarSize(paper),
-            brightness: calculateBrightness(paper.year),
-        };
-    });
-    setPapers(papers3D);
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Set canvas size
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    // Create space background
+    const drawSpace = () => {
+      // Black background
+      ctx.fillStyle = '#000011';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Stars
+      ctx.fillStyle = '#ffffff';
+      for (let i = 0; i < 200; i++) {
+        const x = Math.random() * canvas.width;
+        const y = Math.random() * canvas.height;
+        const size = Math.random() * 1.5;
+        ctx.beginPath();
+        ctx.arc(x, y, size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Nebula effect
+      const gradient = ctx.createRadialGradient(
+        canvas.width / 2, canvas.height / 2, 0,
+        canvas.width / 2, canvas.height / 2, canvas.width / 2
+      );
+      gradient.addColorStop(0, 'rgba(30, 10, 60, 0.1)');
+      gradient.addColorStop(1, 'rgba(0, 0, 20, 0.8)');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    };
+
+    // Draw paper stars
+    const drawStars = () => {
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      const radius = Math.min(canvas.width, canvas.height) * 0.3;
+
+      samplePapers.forEach((paper, index) => {
+        const angle = (index / samplePapers.length) * Math.PI * 2;
+        const x = centerX + Math.cos(angle) * radius;
+        const y = centerY + Math.sin(angle) * radius;
+
+        // Star glow
+        const glow = ctx.createRadialGradient(x, y, 0, x, y, 20);
+        glow.addColorStop(0, paper.color);
+        glow.addColorStop(1, 'transparent');
+
+        ctx.fillStyle = glow;
+        ctx.beginPath();
+        ctx.arc(x, y, 20, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Star core
+        ctx.fillStyle = paper.color;
+        ctx.beginPath();
+        ctx.arc(x, y, 8, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Constellation lines
+        if (index < samplePapers.length - 1) {
+          const nextAngle = ((index + 1) / samplePapers.length) * Math.PI * 2;
+          const nextX = centerX + Math.cos(nextAngle) * radius;
+          const nextY = centerY + Math.sin(nextAngle) * radius;
+
+          ctx.strokeStyle = 'rgba(100, 100, 255, 0.3)';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          ctx.lineTo(nextX, nextY);
+          ctx.stroke();
+        }
+      });
+    };
+
+    let animationFrameId: number;
+    const animate = () => {
+      drawSpace();
+      drawStars();
+      
+      // Rotate slowly
+      if (canvasRef.current) {
+        // This kind of rotation is better handled inside the canvas draw loop for performance
+      }
+      
+      animationFrameId = requestAnimationFrame(animate);
+    };
+
+    animate();
     setLoading(false);
 
-    papers3D.forEach(paper => {
-      const geometry = new THREE.SphereGeometry(paper.size * 0.5, 16, 16);
-      const material = new THREE.MeshStandardMaterial({ 
-        color: paper.color,
-        emissive: paper.color,
-        emissiveIntensity: paper.brightness,
-        metalness: 0.2,
-        roughness: 0.8
-      });
-      
-      const star = new THREE.Mesh(geometry, material);
-      star.position.set(...paper.position);
-      star.userData = paper;
-      starGroup.add(star);
-    });
+    // Click handler
+    const handleClick = (event: MouseEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
 
-    // Controls
-    let isDragging = false;
-    let previousMousePosition = { x: 0, y: 0 };
-    let rotation = { x: starGroup.rotation.x, y: starGroup.rotation.y };
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      const radius = Math.min(canvas.width, canvas.height) * 0.3;
 
-    const onMouseDown = (event: MouseEvent) => {
-      isDragging = true;
-      previousMousePosition = { x: event.clientX, y: event.clientY };
-    };
+      samplePapers.forEach((paper, index) => {
+        const angle = (index / samplePapers.length) * Math.PI * 2;
+        const starX = centerX + Math.cos(angle) * radius;
+        const starY = centerY + Math.sin(angle) * radius;
 
-    const onMouseMove = (event: MouseEvent) => {
-      if (!isDragging) return;
-      const deltaMove = {
-        x: event.clientX - previousMousePosition.x,
-        y: event.clientY - previousMousePosition.y
-      };
-      rotation.x += deltaMove.y * 0.01;
-      rotation.y += deltaMove.x * 0.01;
-      previousMousePosition = { x: event.clientX, y: event.clientY };
-    };
-
-    const onMouseUp = () => { isDragging = false; };
-
-    const raycaster = new THREE.Raycaster();
-    const mouse = new THREE.Vector2();
-
-    const onCanvasClick = (event: MouseEvent) => {
-      if (!canvasRef.current) return;
-      const rect = canvasRef.current.getBoundingClientRect();
-      mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-      mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-      raycaster.setFromCamera(mouse, camera);
-      const intersects = raycaster.intersectObjects(starGroup.children);
-      if (intersects.length > 0) {
-        setSelectedPaper(intersects[0].object.userData as PaperStar);
-      }
-    };
-
-    const onWheel = (event: WheelEvent) => {
-      event.preventDefault();
-      camera.position.z += event.deltaY * 0.01;
-      camera.position.z = Math.max(3, Math.min(25, camera.position.z));
-    };
-
-    const canvas = canvasRef.current;
-    canvas.addEventListener('mousedown', onMouseDown);
-    window.addEventListener('mousemove', onMouseMove);
-    window.addEventListener('mouseup', onMouseUp);
-    canvas.addEventListener('click', onCanvasClick);
-    canvas.addEventListener('wheel', onWheel);
-
-    const animate = () => {
-      requestAnimationFrame(animate);
-      starGroup.rotation.x += (rotation.x - starGroup.rotation.x) * 0.1;
-      starGroup.rotation.y += (rotation.y - starGroup.rotation.y) * 0.1;
-      backgroundStars.rotation.y -= 0.0002;
-      renderer.render(scene, camera);
-    };
-    
-    animate();
-    
-    controlsRef.current = {
-        isDragging,
-        previousMousePosition,
-        rotation,
-        reset: () => {
-            rotation.x = 0;
-            rotation.y = 0;
-            camera.position.z = 8;
+        // Check if click is near star
+        const distance = Math.sqrt((x - starX) ** 2 + (y - starY) ** 2);
+        if (distance < 25) {
+          setSelectedPaper(paper);
         }
+      });
     };
 
+    canvas.addEventListener('click', handleClick);
 
     return () => {
-      canvas.removeEventListener('mousedown', onMouseDown);
-      window.removeEventListener('mousemove', onMouseMove);
-      window.removeEventListener('mouseup', onMouseUp);
-      canvas.removeEventListener('click', onCanvasClick);
-      canvas.removeEventListener('wheel', onWheel);
-      renderer.dispose();
+      cancelAnimationFrame(animationFrameId);
+      canvas.removeEventListener('click', handleClick);
     };
-  }, [initialPapersData]);
-
-  const resetView = () => {
-      if (controlsRef.current) {
-          controlsRef.current.reset();
-      }
-  };
-
-  const filteredPapers = papers.filter(paper => {
-    const matchesSearch = !searchTerm ||
-      paper.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      paper.author?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesFilter = filter === 'all' || paper.domain === filter;
-    
-    return matchesSearch && matchesFilter;
-  });
-
-  useEffect(() => {
-      if(starGroupRef.current) {
-          starGroupRef.current.children.forEach(child => {
-              const paper = child.userData as PaperStar;
-              child.visible = filteredPapers.some(p => p.id === paper.id);
-          });
-      }
-  }, [filteredPapers]);
+  }, []);
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center h-full w-full bg-black text-white">
-        <div className="text-4xl mb-4 animate-[bounce_2s_ease-in-out_infinite]">🚀</div>
-        <h3 className="text-2xl font-bold mb-2">Initializing Research Galaxy...</h3>
-        <p className="text-blue-300">Calibrating star charts and aligning constellations...</p>
+      <div className="flex flex-col items-center justify-center h-screen bg-black text-white">
+        <div className="text-6xl mb-4 animate-bounce">🚀</div>
+        <h2 className="text-2xl font-bold mb-2">Initializing Research Galaxy...</h2>
+        <p className="text-gray-400">Calibrating star charts and aligning constellations...</p>
+        <div className="mt-4 w-64 h-2 bg-gray-700 rounded-full overflow-hidden">
+          <div className="h-full bg-blue-500 animate-pulse" style={{ width: '80%' }}></div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="relative w-full h-full bg-black overflow-hidden rounded-lg">
-      <canvas ref={canvasRef} className="w-full h-full" />
+    <div className="relative w-full h-full bg-black overflow-hidden">
+      <canvas 
+        ref={canvasRef} 
+        className="w-full h-full cursor-pointer"
+      />
       
+      {/* Paper Details Panel */}
       {selectedPaper && (
-        <div className="absolute top-5 right-5 bg-[#000a1e]/95 text-white p-0 rounded-2xl max-w-md max-h-[80vh] overflow-y-auto backdrop-blur-lg border border-blue-900/50 shadow-2xl shadow-blue-500/10">
-          <div className="p-5 border-l-4" style={{ borderLeftColor: selectedPaper.color }}>
-            <div className="flex justify-between items-start">
-              <h3 className="m-0 text-lg leading-snug flex-1">{selectedPaper.title}</h3>
-              <button onClick={() => setSelectedPaper(null)} className="bg-transparent border-none text-white text-2xl cursor-pointer p-1 ml-2">&times;</button>
+        <div className="absolute top-6 right-6 bg-gray-900/95 text-white p-6 rounded-xl max-w-md border-l-4 backdrop-blur-sm"
+             style={{ borderLeftColor: selectedPaper.color }}>
+          <div className="flex justify-between items-start mb-4">
+            <h3 className="text-xl font-bold flex-1 mr-4">{selectedPaper.title}</h3>
+            <button 
+              onClick={() => setSelectedPaper(null)}
+              className="text-white hover:text-gray-300 text-xl font-bold"
+            >
+              ✕
+            </button>
+          </div>
+          
+          <div className="space-y-3">
+            <div className="text-gray-300">{selectedPaper.authors}</div>
+            <div className="flex gap-4 text-gray-400">
+              <span>📅 {selectedPaper.year}</span>
+              <span>🔬 {selectedPaper.domain.replace('_', ' ')}</span>
             </div>
-          </div>
-          <div className="p-5 border-t border-white/10">
-              <p className="text-sm opacity-90 mb-2">{selectedPaper.author}</p>
-              <div className="flex gap-4 text-xs opacity-70 mb-2">
-                  <span className="year">{selectedPaper.year}</span>
-              </div>
-              <div className="inline-block px-2 py-1 rounded-full text-xs font-bold text-black" style={{ backgroundColor: selectedPaper.color }}>
-                  {selectedPaper.domain.replace('_', ' ').toUpperCase()}
-              </div>
-          </div>
-          <div className="p-5 border-t border-white/10">
-              <strong>Summary:</strong>
-              <p className="text-sm italic opacity-90 mt-1">{selectedPaper.summary}</p>
+            <div className="pt-3 border-t border-gray-700">
+              <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">
+                📖 View Research Paper
+              </button>
+            </div>
           </div>
         </div>
       )}
       
-      <div className="absolute bottom-6 left-6 bg-[#000a1e]/90 p-5 rounded-xl text-white backdrop-blur-lg border border-blue-900/40 min-w-[250px]">
-        <h4 className="m-0 mb-4 text-blue-400 font-bold">🌌 Research Galaxy</h4>
-        <input
-          type="text"
-          placeholder="🔍 Search papers..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full p-2 border border-blue-900/60 bg-white/10 text-white rounded-md mb-2.5"
-        />
-        <select value={filter} onChange={(e) => setFilter(e.target.value)} className="w-full p-2 border border-blue-900/60 bg-white/10 text-white rounded-md mb-2.5">
-          <option value="all" className="text-black">All Domains</option>
-          <option value="human_biology" className="text-black">Human Biology</option>
-          <option value="plant_biology" className="text-black">Plant Biology</option>
-          <option value="microbiology" className="text-black">Microbiology</option>
-          <option value="radiation" className="text-black">Radiation</option>
-          <option value="technology" className="text-black">Technology</option>
-        </select>
-        <div className="grid grid-cols-2 gap-2 mb-2.5">
-          <button onClick={resetView} className="p-1.5 border border-blue-900/60 bg-blue-500/30 text-white rounded text-xs cursor-pointer">🎯 Reset View</button>
-        </div>
-        <div className="text-xs opacity-80 text-center">
-          Displaying: <strong>{filteredPapers.length}</strong> of <strong>{papers.length}</strong> papers
+      {/* Control Panel */}
+      <div className="absolute bottom-6 left-6 bg-gray-900/90 text-white p-4 rounded-xl backdrop-blur-sm">
+        <h4 className="font-bold text-lg mb-2 text-blue-400">🌌 Research Galaxy</h4>
+        <div className="text-sm space-y-1">
+          <div>Exploring: <strong>{samplePapers.length}</strong> NASA papers</div>
+          <div className="text-gray-400 text-xs">Click stars to explore research</div>
         </div>
       </div>
       
-      <div className="absolute top-5 left-6 bg-[#000a1e]/90 p-4 rounded-xl text-white backdrop-blur-lg border border-blue-900/40 text-xs">
-        <h5 className="m-0 mb-2.5 text-blue-400 font-bold">Research Domains</h5>
-        <div className="flex items-center mb-1.5"><span className="w-2.5 h-2.5 rounded-full mr-2" style={{ background: '#ff6b6b' }}></span>Human Biology</div>
-        <div className="flex items-center mb-1.5"><span className="w-2.5 h-2.5 rounded-full mr-2" style={{ background: '#51cf66' }}></span>Plant Biology</div>
-        <div className="flex items-center mb-1.5"><span className="w-2.5 h-2.5 rounded-full mr-2" style={{ background: '#339af0' }}></span>Microbiology</div>
-        <div className="flex items-center mb-1.5"><span className="w-2.5 h-2.5 rounded-full mr-2" style={{ background: '#cc5de8' }}></span>Radiation</div>
-        <div className="flex items-center"><span className="w-2.5 h-2.5 rounded-full mr-2" style={{ background: '#ffd43b' }}></span>Technology</div>
+      {/* Legend */}
+      <div className="absolute top-6 left-6 bg-gray-900/90 text-white p-4 rounded-xl backdrop-blur-sm">
+        <h5 className="font-bold mb-3 text-blue-400">Research Domains</h5>
+        <div className="space-y-2 text-sm">
+          <div className="flex items-center">
+            <div className="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
+            Human Biology
+          </div>
+          <div className="flex items-center">
+            <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
+            Plant Biology
+          </div>
+          <div className="flex items-center">
+            <div className="w-3 h-3 rounded-full bg-blue-500 mr-2"></div>
+            Microbiology
+          </div>
+          <div className="flex items-center">
+            <div className="w-3 h-3 rounded-full bg-purple-500 mr-2"></div>
+            Radiation
+          </div>
+          <div className="flex items-center">
+            <div className="w-3 h-3 rounded-full bg-yellow-500 mr-2"></div>
+            Technology
+          </div>
+        </div>
+      </div>
+
+      {/* Instructions */}
+      <div className="absolute bottom-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center text-white/60 pointer-events-none">
+        <p className="text-lg mb-2">✨ Click on stars to explore NASA research</p>
+        <p className="text-sm">Each star represents a space biology paper</p>
       </div>
     </div>
   );
 };
 
-export default function CosmicResearchGalaxyPageWrapper() {
-  const [data, setData] = useState<ResearchPapersOutput | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    getResearchPapers().then((fetchedData) => {
-      setData(fetchedData);
-      setLoading(false);
-    }).catch(error => {
-      console.error("Failed to fetch research papers:", error);
-      setLoading(false);
-    });
-  }, []);
-
-  if (loading || !data) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full w-full bg-black text-white">
-        <div className="text-4xl mb-4 animate-[bounce_2s_ease-in-out_infinite]">🚀</div>
-        <h3 className="text-2xl font-bold mb-2">Initializing Research Galaxy...</h3>
-        <p className="text-blue-300">Calibrating star charts and aligning constellations...</p>
-      </div>
-    );
-  }
-
-  return <ResearchGalaxy papersData={data} />;
-}
+export default ResearchGalaxy;
