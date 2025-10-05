@@ -1,0 +1,59 @@
+[
+    {
+        "id": "1",
+        "symbol": "TP53",
+        "name": "Tumor Protein P53",
+        "function": "Acts as a tumor suppressor, regulating cell division by keeping cells from growing and dividing too fast or in an uncontrolled way.",
+        "space_effects": {
+            "radiation_sensitivity": "High",
+            "impact": "Crucial for DNA repair after radiation exposure. Mutations can lead to increased cancer risk in high-radiation environments.",
+            "recommendation": "Monitor TP53 status and expression levels. Consider antioxidant supplements."
+        }
+    },
+    {
+        "id": "2",
+        "symbol": "SOD2",
+        "name": "Superoxide Dismutase 2",
+        "function": "An antioxidant enzyme that destroys superoxide free radicals, protecting cells from oxidative damage.",
+        "space_effects": {
+            "radiation_sensitivity": "Medium",
+            "impact": "Protects against oxidative stress caused by cosmic radiation. Variations can affect an astronaut's ability to handle oxidative damage.",
+            "recommendation": "Assess SOD2 variants. Supplement with dietary antioxidants."
+        }
+    },
+    {
+        "id": "3",
+        "symbol": "TERT",
+        "name": "Telomerase Reverse Transcriptase",
+        "function": "Maintains telomere length at the ends of chromosomes, essential for cell longevity and replication.",
+        "space_effects": {
+            "radiation_sensitivity": "High",
+            "impact": "Spaceflight has been shown to alter telomere length. TERT activity is critical for mitigating radiation-induced cellular aging.",
+            "recommendation": "Monitor telomere dynamics and TERT expression. Lifestyle interventions to reduce stress are important."
+        }
+    },
+    {
+        "id": "4",
+        "symbol": "VEGFA",
+        "name": "Vascular Endothelial Growth Factor A",
+        "function": "Plays a key role in the formation of new blood vessels (angiogenesis).",
+        "space_effects": {
+            "radiation_sensitivity": "Low",
+            "impact": "Microgravity can cause fluid shifts and cardiovascular deconditioning. VEGFA is involved in vascular adaptation to these changes.",
+            "recommendation": "Regular cardiovascular exercise is crucial. Monitor for vision changes (SANS)."
+        }
+    },
+    {
+        "id": "5",
+        "symbol": "BRCA1",
+        "name": "BRCA1 DNA Repair Associated",
+        "function": "A tumor suppressor gene involved in repairing damaged DNA.",
+        "space_effects": {
+            "radiation_sensitivity": "Very High",
+            "impact": "Mutations in BRCA1 significantly increase the risk of cancer from radiation exposure in space.",
+            "recommendation": "Astronauts with BRCA1 mutations require enhanced radiation shielding and monitoring. Genetic screening is essential."
+        }
+    }
+]
+
+    

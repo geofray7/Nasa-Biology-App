@@ -1,14 +1,5 @@
 'use client';
 import React, { useState } from 'react';
-import {
-  collection,
-  query,
-  where,
-  getDocs,
-  addDoc,
-  serverTimestamp,
-} from 'firebase/firestore';
-import { useFirestore, useUser, FirestorePermissionError, errorEmitter } from '@/firebase';
 
 import {
   Card,
@@ -23,15 +14,12 @@ import {
   Dna,
   Search,
   FlaskConical,
-  AlertTriangle,
-  HeartPulse,
-  Code,
   Languages,
   Loader,
-  Info,
 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
+import mockGenes from '@/lib/genes.json';
 
 // --- Helper Types ---
 interface Gene {
@@ -62,8 +50,6 @@ interface AnalysisResult {
 // --- Main Component ---
 const DNAExplorerPage = () => {
   const { toast } = useToast();
-  const firestore = useFirestore();
-  const { user, isUserLoading } = useUser();
 
   // --- State Management ---
   const [dnaSequence, setDnaSequence] = useState(
@@ -83,16 +69,11 @@ const DNAExplorerPage = () => {
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  // --- Client-Side "Cloud Function" Logic ---
+  // --- Client-Side Logic ---
 
-  // Equivalent to `analyzeDNA` Cloud Function
   const handleAnalyzeSequence = async () => {
     if (!analysisSequence) {
       toast({ variant: 'destructive', title: 'Error', description: 'Please enter a DNA sequence to analyze.' });
-      return;
-    }
-    if (!user) {
-      toast({ variant: 'destructive', title: 'Authentication Required', description: 'You must be signed in to save an analysis.' });
       return;
     }
 
@@ -104,7 +85,9 @@ const DNAExplorerPage = () => {
 
     setIsAnalyzing(true);
     
-    // Perform analysis
+    // Simulate network delay
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
     const upperSeq = analysisSequence.toUpperCase();
     const analysis: Omit<AnalysisResult, 'space_predictions'> = {
       sequence_length: upperSeq.length,
@@ -118,81 +101,38 @@ const DNAExplorerPage = () => {
       analysis_date: new Date(),
     };
 
-    // Predict space impacts
     const space_predictions = predictSpaceImpact(analysis);
     const fullAnalysis: AnalysisResult = { ...analysis, space_predictions };
     setAnalysisResult(fullAnalysis);
 
-    // Save to user's analyses in Firestore
-    const analysesCollection = collection(firestore, 'users', user.uid, 'dna_analyses');
-    const analysisData = {
-      userId: user.uid,
-      originalSequence: upperSeq,
-      sequenceLength: fullAnalysis.sequence_length,
-      gcContent: Number(fullAnalysis.gc_content),
-      analysisDate: serverTimestamp(),
-      results: JSON.stringify({ // Store complex object as a string
-        ...fullAnalysis,
-        analysis_date: fullAnalysis.analysis_date.toISOString(),
-      }),
-      spacePredictions: JSON.stringify(fullAnalysis.space_predictions)
-    };
-
-    addDoc(analysesCollection, analysisData)
-      .then(() => {
-        toast({ title: 'Analysis Complete', description: 'DNA analysis has been successfully saved to your profile.' });
-      })
-      .catch(async (serverError) => {
-        const permissionError = new FirestorePermissionError({
-          path: analysesCollection.path,
-          operation: 'create',
-          requestResourceData: analysisData,
-        });
-        errorEmitter.emit('permission-error', permissionError);
-      })
-      .finally(() => {
-        setIsAnalyzing(false);
-      });
+    toast({ title: 'Analysis Complete', description: 'DNA analysis has been performed.' });
+    setIsAnalyzing(false);
   };
   
-  // Equivalent to `searchGene` Cloud Function
   const handleGeneSearch = async () => {
     if (!geneSearchTerm) {
       setGeneResults([]);
       return;
     }
-    if (!user) {
-        toast({ variant: "destructive", title: "Authentication Required", description: "You must be signed in to search for genes." });
-        return;
-    }
     setIsGeneSearching(true);
-    try {
-      const genesRef = collection(firestore, 'genes');
-      const q = query(genesRef, where('symbol', '==', geneSearchTerm.toUpperCase()));
-      const querySnapshot = await getDocs(q);
-      
-      let results: Gene[] = [];
-      querySnapshot.forEach((doc) => {
-        results.push({ id: doc.id, ...doc.data() } as Gene);
-      });
-      
-      if (results.length === 0) {
-        toast({ variant: 'destructive', title: 'Not Found', description: `Gene "${geneSearchTerm}" not in database. Please add it via the Firebase console.` });
-      }
+    
+    // Simulate network delay
+    await new Promise(resolve => setTimeout(resolve, 500));
 
-      setGeneResults(results);
-    } catch (error: any) {
-        const permissionError = new FirestorePermissionError({
-          path: 'genes',
-          operation: 'list',
-        });
-        errorEmitter.emit('permission-error', permissionError);
-    } finally {
-      setIsGeneSearching(false);
+    const searchTermLower = geneSearchTerm.toLowerCase();
+    const results = mockGenes.filter(gene => 
+      gene.symbol.toLowerCase().includes(searchTermLower) ||
+      gene.name.toLowerCase().includes(searchTermLower)
+    ) as Gene[];
+      
+    if (results.length === 0) {
+      toast({ variant: 'destructive', title: 'Not Found', description: `Gene "${geneSearchTerm}" not in local database.` });
     }
+
+    setGeneResults(results);
+    setIsGeneSearching(false);
   };
   
-  // Equivalent to `predictSpaceImpact` internal function
   const predictSpaceImpact = (analysis: Pick<AnalysisResult, 'gc_content' | 'sequence_length'>) => {
     const gcContent = parseFloat(analysis.gc_content);
     
@@ -215,8 +155,6 @@ const DNAExplorerPage = () => {
       ]
     };
   };
-
-  // --- Frontend Logic ---
 
   const handleSequenceSearch = () => {
     if (!searchText) {
@@ -269,6 +207,7 @@ const DNAExplorerPage = () => {
     <div className="w-full max-w-7xl mx-auto space-y-6">
       <div className="text-center">
         <h1 className="text-3xl font-headline font-bold mb-2 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+          <Dna className="inline-block mr-2" />
           DNA Cosmic Explorer
         </h1>
         <p className="text-muted-foreground">
@@ -320,17 +259,16 @@ const DNAExplorerPage = () => {
           <CardContent>
             <div className="flex gap-2 mb-4">
               <Input
-                placeholder="Enter gene symbol (e.g. BRCA1)"
+                placeholder="Enter gene symbol (e.g. TP53)"
                 value={geneSearchTerm}
                 onChange={(e) => setGeneSearchTerm(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleGeneSearch()}
               />
-              <Button onClick={handleGeneSearch} disabled={isGeneSearching || isUserLoading || !user}>
+              <Button onClick={handleGeneSearch} disabled={isGeneSearching}>
                 {isGeneSearching ? <Loader className="animate-spin" /> : <Search />}
                 <span className="sr-only">Search</span>
               </Button>
             </div>
-            {!user && !isUserLoading && <p className="text-xs text-muted-foreground text-center">Please sign in to search the gene database.</p>}
             <ScrollArea className="h-64 space-y-2">
               {geneResults.length > 0 ? (
                 geneResults.map((gene) => (
@@ -404,9 +342,9 @@ const DNAExplorerPage = () => {
                     onChange={(e) => setAnalysisSequence(e.target.value)}
                     className="font-mono mb-2"
                 />
-                <Button onClick={handleAnalyzeSequence} disabled={isAnalyzing || isUserLoading || !user}>
+                <Button onClick={handleAnalyzeSequence} disabled={isAnalyzing}>
                     {isAnalyzing ? <Loader className="animate-spin mr-2"/> : <FlaskConical className="mr-2"/>}
-                    {isAnalyzing ? "Analyzing..." : (user ? "Analyze and Save" : "Login to Analyze")}
+                    {isAnalyzing ? "Analyzing..." : "Analyze Sequence"}
                 </Button>
                 
                 {analysisResult && (
@@ -446,3 +384,5 @@ const Stat = ({title, value}: {title:string, value: string|number}) => (
 );
 
 export default DNAExplorerPage;
+
+    
