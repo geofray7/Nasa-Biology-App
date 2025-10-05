@@ -170,14 +170,15 @@
         "displayName": { "type": "string", "description": "The user's display name." },
         "photoURL": { "type": "string", "format": "uri", "description": "URL of the user's profile picture." },
         "bio": { "type": "string", "description": "A short biography of the user." },
-        "role": { "type": "string", "enum": ["astronaut", "scientist", "researcher"], "description": "The user's role in the system." },
+        "role": { "type": "string", "enum": ["astronaut", "scientist", "researcher", "guest"], "description": "The user's role in the system." },
         "mission": { "type": "string", "description": "The user's current mission." },
         "specialization": { "type": "string", "description": "The user's field of specialization." },
         "joinedDate": { "type": "string", "format": "date-time", "description": "The date the user joined." },
         "lastLogin": { "type": "string", "format": "date-time", "description": "The user's last login date." },
-        "isOnline": { "type": "boolean", "description": "Indicates if the user is currently online." }
+        "isOnline": { "type": "boolean", "description": "Indicates if the user is currently online." },
+        "isGuest": { "type": "boolean", "description": "Indicates if the user is a guest." }
       },
-      "required": ["uid", "email", "displayName"]
+      "required": ["uid", "email"]
     },
     "UserStats": {
       "title": "User Stats",
@@ -188,7 +189,8 @@
         "dnaAnalyses": { "type": "number", "description": "Number of DNA analyses performed." },
         "healthEntries": { "type": "number", "description": "Number of health data entries." },
         "badges": { "type": "array", "items": { "type": "string" }, "description": "List of badges earned." },
-        "achievements": { "type": "object", "description": "Map of unlocked achievements." }
+        "achievements": { "type": "object", "description": "Map of unlocked achievements." },
+        "isGuest": { "type": "boolean", "description": "Indicates if the stats belong to a guest." }
       }
     }
   },

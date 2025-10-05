@@ -4,7 +4,7 @@ import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/app-sidebar';
 import { AppHeader } from '@/components/app-header';
 import { SettingsProvider, useSettingsContext } from '@/hooks/use-settings.tsx';
-import { FirebaseClientProvider, useUser } from '@/firebase';
+import { useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
@@ -47,10 +47,8 @@ function ProtectedContent({ children }: { children: ReactNode }) {
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   return (
-    <FirebaseClientProvider>
       <SettingsProvider>
         <ProtectedContent>{children}</ProtectedContent>
       </SettingsProvider>
-    </FirebaseClientProvider>
   );
 }

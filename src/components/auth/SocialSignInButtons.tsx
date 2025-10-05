@@ -3,22 +3,31 @@
 import { 
     GoogleAuthProvider, 
     signInWithPopup,
+    linkWithPopup,
     UserCredential
 } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
-import { useAuth, useFirestore } from '@/firebase';
+import { useAuth, useFirestore, useUser } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 
 export function SocialSignInButtons() {
     const auth = useAuth();
+    const { user: currentUser } = useUser();
     const firestore = useFirestore();
     const router = useRouter();
 
     const handleGoogleSignIn = async () => {
         const provider = new GoogleAuthProvider();
         try {
-            const userCredential = await signInWithPopup(auth, provider);
+            let userCredential;
+            if (currentUser && currentUser.isAnonymous) {
+                // Link anonymous account with Google
+                userCredential = await linkWithPopup(currentUser, provider);
+            } else {
+                // Standard Google sign-in
+                userCredential = await signInWithPopup(auth, provider);
+            }
             await checkAndCreateUser(userCredential);
             router.push('/dashboard');
         } catch (error) {
@@ -32,7 +41,7 @@ export function SocialSignInButtons() {
         const userDoc = await getDoc(userDocRef);
 
         if (!userDoc.exists()) {
-            // Create user document in Firestore
+            // Create user document in Firestore for new user
             await setDoc(userDocRef, {
                 uid: user.uid,
                 email: user.email,
@@ -42,7 +51,8 @@ export function SocialSignInButtons() {
                 specialization: 'Biology',
                 joinedDate: new Date(),
                 lastLogin: new Date(),
-                isOnline: true
+                isOnline: true,
+                isGuest: false,
             });
 
             // Create user stats document
@@ -54,10 +64,14 @@ export function SocialSignInButtons() {
                 achievements: {}
             });
         } else {
+             // Update existing user's info
              await setDoc(userDocRef, {
                 lastLogin: new Date(),
-                isOnline: true
-            }, { merge: true });
+                isOnline: true,
+                isGuest: false, // Ensure guest status is removed on full login
+                displayName: user.displayName, // Update display name from Google
+                photoURL: user.photoURL, // Update photo from Google
+             }, { merge: true });
         }
     };
 

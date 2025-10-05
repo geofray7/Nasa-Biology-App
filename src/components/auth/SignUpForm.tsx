@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
-import { useAuth, useFirestore } from '@/firebase';
+import { useAuth, useFirestore, useUser } from '@/firebase';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -26,6 +26,7 @@ export function SignUpForm() {
     });
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
+    const { user: currentUser } = useUser();
 
     const handleSignUp = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -33,7 +34,7 @@ export function SignUpForm() {
         setError(null);
 
         try {
-            const userCredential = await createUserWithEmailAndPassword(
+             const userCredential = await createUserWithEmailAndPassword(
                 auth,
                 formData.email,
                 formData.password
@@ -43,7 +44,8 @@ export function SignUpForm() {
                 displayName: formData.displayName
             });
 
-            await setDoc(doc(firestore, 'users', userCredential.user.uid), {
+            const userDocRef = doc(firestore, 'users', userCredential.user.uid);
+            await setDoc(userDocRef, {
                 uid: userCredential.user.uid,
                 email: formData.email,
                 displayName: formData.displayName,
@@ -52,7 +54,8 @@ export function SignUpForm() {
                 specialization: formData.specialization,
                 joinedDate: new Date(),
                 lastLogin: new Date(),
-                isOnline: true
+                isOnline: true,
+                isGuest: false,
             });
 
             await setDoc(doc(firestore, 'user_stats', userCredential.user.uid), {
@@ -63,6 +66,7 @@ export function SignUpForm() {
                 achievements: {}
             });
             
+            // If there was an anonymous user, their session is now upgraded.
             router.push('/dashboard');
 
         } catch (error: any) {

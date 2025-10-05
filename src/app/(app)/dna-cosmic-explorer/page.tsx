@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import {
   collection,
   query,
@@ -8,8 +8,7 @@ import {
   addDoc,
   serverTimestamp,
 } from 'firebase/firestore';
-import { useFirestore, useUser, errorEmitter, FirestorePermissionError } from '@/firebase';
-import { useMemoFirebase } from '@/firebase/provider';
+import { useFirestore, useUser, FirestorePermissionError, errorEmitter } from '@/firebase';
 
 import {
   Card,
@@ -64,7 +63,7 @@ interface AnalysisResult {
 const DNAExplorerPage = () => {
   const { toast } = useToast();
   const firestore = useFirestore();
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
 
   // --- State Management ---
   const [dnaSequence, setDnaSequence] = useState(
@@ -326,12 +325,12 @@ const DNAExplorerPage = () => {
                 onChange={(e) => setGeneSearchTerm(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleGeneSearch()}
               />
-              <Button onClick={handleGeneSearch} disabled={isGeneSearching || !user}>
+              <Button onClick={handleGeneSearch} disabled={isGeneSearching || isUserLoading || !user}>
                 {isGeneSearching ? <Loader className="animate-spin" /> : <Search />}
                 <span className="sr-only">Search</span>
-                 {!user && <span className="ml-2">Login to Search</span>}
               </Button>
             </div>
+            {!user && !isUserLoading && <p className="text-xs text-muted-foreground text-center">Please sign in to search the gene database.</p>}
             <ScrollArea className="h-64 space-y-2">
               {geneResults.length > 0 ? (
                 geneResults.map((gene) => (
@@ -405,7 +404,7 @@ const DNAExplorerPage = () => {
                     onChange={(e) => setAnalysisSequence(e.target.value)}
                     className="font-mono mb-2"
                 />
-                <Button onClick={handleAnalyzeSequence} disabled={isAnalyzing || !user}>
+                <Button onClick={handleAnalyzeSequence} disabled={isAnalyzing || isUserLoading || !user}>
                     {isAnalyzing ? <Loader className="animate-spin mr-2"/> : <FlaskConical className="mr-2"/>}
                     {isAnalyzing ? "Analyzing..." : (user ? "Analyze and Save" : "Login to Analyze")}
                 </Button>
