@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
-import { useAuth, useFirestore, useUser } from '@/firebase';
+import { useAuth, useFirestore, useUser, FirestorePermissionError, errorEmitter } from '@/firebase';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -45,7 +45,7 @@ export function SignUpForm() {
             });
 
             const userDocRef = doc(firestore, 'users', userCredential.user.uid);
-            await setDoc(userDocRef, {
+            const userProfileData = {
                 uid: userCredential.user.uid,
                 email: formData.email,
                 displayName: formData.displayName,
@@ -56,20 +56,39 @@ export function SignUpForm() {
                 lastLogin: new Date(),
                 isOnline: true,
                 isGuest: false,
+            };
+            
+            // Non-blocking write with contextual error handling
+            setDoc(userDocRef, userProfileData).catch(error => {
+                errorEmitter.emit('permission-error', new FirestorePermissionError({
+                    path: userDocRef.path,
+                    operation: 'create',
+                    requestResourceData: userProfileData,
+                }));
             });
 
-            await setDoc(doc(firestore, 'user_stats', userCredential.user.uid), {
+            const userStatsRef = doc(firestore, 'user_stats', userCredential.user.uid);
+            const userStatsData = {
                 experimentsCompleted: 0,
                 dnaAnalyses: 0,
                 healthEntries: 0,
                 badges: ["New Explorer"],
                 achievements: {}
+            };
+
+            // Non-blocking write with contextual error handling
+            setDoc(userStatsRef, userStatsData).catch(error => {
+                 errorEmitter.emit('permission-error', new FirestorePermissionError({
+                    path: userStatsRef.path,
+                    operation: 'create',
+                    requestResourceData: userStatsData,
+                }));
             });
             
-            // If there was an anonymous user, their session is now upgraded.
             router.push('/dashboard');
 
         } catch (error: any) {
+            // This will catch errors from createUserWithEmailAndPassword itself
             setError(error.message);
         } finally {
             setLoading(false);
