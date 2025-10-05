@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/app-sidebar';
 import { AppHeader } from '@/components/app-header';
-import { SettingsProvider } from '@/hooks/use-settings.tsx';
+import { SettingsProvider, useSettingsContext } from '@/hooks/use-settings.tsx';
 
 
 function AppContent({ children }: { children: ReactNode }) {
