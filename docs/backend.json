@@ -1,108 +1,65 @@
 {
   "entities": {
-    "Planet": {
+    "Gene": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Planet",
+      "title": "Gene",
       "type": "object",
-      "description": "Represents a planet with its properties and characteristics.",
+      "description": "Represents a gene with its properties, space effects, health risks, and variants.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the planet."
+          "description": "Unique identifier for the gene entity."
+        },
+        "symbol": {
+          "type": "string",
+          "description": "The symbol of the gene (e.g., BRCA1)."
         },
         "name": {
           "type": "string",
-          "description": "Name of the planet."
+          "description": "The full name of the gene (e.g., Breast cancer type 1 susceptibility protein)."
         },
-        "type": {
+        "sequence": {
           "type": "string",
-          "description": "Type of the planet (e.g., terrestrial, gas giant)."
+          "description": "The DNA sequence of the gene."
         },
-        "massEarth": {
+        "chromosome": {
+          "type": "string",
+          "description": "The chromosome where the gene is located."
+        },
+        "start": {
           "type": "number",
-          "description": "Mass of the planet relative to Earth."
+          "description": "The start position of the gene on the chromosome."
         },
-        "diameterKm": {
+        "end": {
           "type": "number",
-          "description": "Diameter of the planet in kilometers."
+          "description": "The end position of the gene on the chromosome."
         },
-        "gravityMs2": {
-          "type": "number",
-          "description": "Surface gravity of the planet in meters per second squared."
+        "strand": {
+          "type": "string",
+          "description": "The strand of the gene (+ or -)."
         },
-        "surfaceTempMin": {
-          "type": "number",
-          "description": "Minimum surface temperature of the planet in Celsius."
+        "function": {
+          "type": "string",
+          "description": "The function of the gene."
         },
-        "surfaceTempMax": {
-          "type": "number",
-          "description": "Maximum surface temperature of the planet in Celsius."
+        "biotype": {
+          "type": "string",
+          "description": "The biotype of the gene (e.g., protein_coding)."
         },
-        "orbitalPeriodDays": {
-          "type": "number",
-          "description": "Orbital period of the planet in days."
-        },
-        "dayLengthHours": {
-          "type": "number",
-          "description": "Length of a day on the planet in hours."
-        },
-        "distanceFromSunAu": {
-          "type": "number",
-          "description": "Distance of the planet from the Sun in astronomical units."
-        },
-        "atmosphericComposition": {
+        "healthRisks": {
           "type": "array",
-          "description": "Composition of the planet's atmosphere.",
+          "description": "List of health risks associated with the gene.",
           "items": {
             "type": "string"
           }
         },
-        "moons": {
-          "type": "number",
-          "description": "Number of moons orbiting the planet."
-        },
-        "magneticField": {
-          "type": "boolean",
-          "description": "Indicates whether the planet has a magnetic field."
-        },
-        "radiationLevel": {
+        "spaceEffects": {
           "type": "string",
-          "description": "Radiation level on the planet (e.g., low, moderate, high, extreme)."
+          "description": "Space related effects of the gene."
         },
-        "waterPresence": {
-          "type": "string",
-          "description": "Indicates the presence of water on the planet (e.g., subsurface ice)."
-        },
-        "habitabilityScore": {
-          "type": "number",
-          "description": "Habitability score of the planet on a 0-1 scale."
-        },
-        "nasaMissions": {
+        "variants": {
           "type": "array",
-          "description": "References to missions. (Relationship: Planet 1:N Mission)",
-          "items": {
-            "type": "string"
-          }
-        },
-        "discoveryYear": {
-          "type": "number",
-          "description": "Year when the planet was discovered."
-        },
-        "lastMissionUpdate": {
-          "type": "string",
-          "description": "Date of the last mission update.",
-          "format": "date-time"
-        },
-        "images": {
-          "type": "array",
-          "description": "Links to images associated with the planet.",
-          "items": {
-            "type": "string"
-          }
-        },
-        "scientificHighlights": {
-          "type": "array",
-          "description": "Scientific highlights of the planet.",
+          "description": "List of variants of the gene.",
           "items": {
             "type": "string"
           }
@@ -110,125 +67,101 @@
       },
       "required": [
         "id",
+        "symbol",
         "name",
-        "type"
+        "sequence",
+        "function"
       ]
     },
-    "Mission": {
+    "DnaAnalysis": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Mission",
+      "title": "DnaAnalysis",
       "type": "object",
-      "description": "Represents a NASA mission to a planet.",
+      "description": "Represents a DNA analysis performed on a sequence.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the mission."
+          "description": "Unique identifier for the DNA analysis entity."
         },
-        "name": {
+        "userId": {
           "type": "string",
-          "description": "Name of the mission."
+          "description": "Reference to User. (Relationship: User 1:N DnaAnalysis) The ID of the user who performed the analysis."
         },
-        "targetPlanet": {
+        "originalSequence": {
           "type": "string",
-          "description": "Reference to Planet. (Relationship: Planet 1:N Mission)"
+          "description": "The original DNA sequence that was analyzed."
         },
-        "launchDate": {
+        "sequenceLength": {
+          "type": "number",
+          "description": "The length of the DNA sequence."
+        },
+        "gcContent": {
+          "type": "number",
+          "description": "The GC content of the DNA sequence."
+        },
+        "analysisDate": {
           "type": "string",
-          "description": "Date when the mission was launched.",
+          "description": "The date and time when the analysis was performed.",
           "format": "date-time"
         },
-        "arrivalDate": {
+        "results": {
           "type": "string",
-          "description": "Date when the mission arrived at the target planet.",
-          "format": "date-time"
+          "description": "The analysis results, stored as JSON string."
         },
-        "status": {
+        "spacePredictions": {
           "type": "string",
-          "description": "Status of the mission (e.g., active, completed)."
-        },
-        "objectives": {
-          "type": "array",
-          "description": "Objectives of the mission.",
-          "items": {
-            "type": "string"
-          }
-        },
-        "instruments": {
-          "type": "array",
-          "description": "Instruments used in the mission.",
-          "items": {
-            "type": "string"
-          }
-        },
-        "latestFindings": {
-          "type": "string",
-          "description": "Latest findings from the mission."
-        },
-        "nextActivities": {
-          "type": "string",
-          "description": "Next activities planned for the mission."
-        },
-        "nasaWebsite": {
-          "type": "string",
-          "description": "URL of the NASA website for the mission.",
-          "format": "uri"
-        },
-        "liveDataUrl": {
-          "type": "string",
-          "description": "URL for live data from the mission.",
-          "format": "uri"
+          "description": "Predictions related to space effects, stored as JSON string."
         }
       },
       "required": [
         "id",
-        "name",
-        "targetPlanet"
+        "userId",
+        "originalSequence",
+        "sequenceLength",
+        "gcContent",
+        "analysisDate"
       ]
     },
-    "RealTimeData": {
+    "SpaceResearch": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "RealTimeData",
+      "title": "SpaceResearch",
       "type": "object",
-      "description": "Represents real-time data for a planet.",
+      "description": "Represents a space research study.",
       "properties": {
-        "planetId": {
+        "id": {
           "type": "string",
-          "description": "Reference to Planet. (Relationship: Planet 1:1 RealTimeData)"
+          "description": "Unique identifier for the space research study."
         },
-        "timestamp": {
+        "title": {
           "type": "string",
-          "description": "Timestamp of the data.",
-          "format": "date-time"
+          "description": "The title of the space research study."
         },
-        "weather": {
+        "findings": {
+          "type": "string",
+          "description": "The findings of the space research study."
+        },
+        "genesInvolved": {
           "type": "array",
-          "description": "Weather conditions on the planet.",
+          "description": "List of genes involved in the space research study.",
           "items": {
             "type": "string"
           }
         },
-        "orbitalPosition": {
-          "type": "array",
-          "description": "Orbital position of the planet.",
-          "items": {
-            "type": "string"
-          }
-        },
-        "activeMissions": {
-          "type": "array",
-          "description": "References to active missions. (Relationship: Mission N:N RealTimeData)",
-          "items": {
-            "type": "string"
-          }
-        },
-        "solarActivity": {
+        "implications": {
           "type": "string",
-          "description": "Solar activity level."
+          "description": "The implications of the space research study."
+        },
+        "reference": {
+          "type": "string",
+          "description": "The reference of the space research study."
         }
       },
       "required": [
-        "planetId",
-        "timestamp"
+        "id",
+        "title",
+        "findings",
+        "implications",
+        "reference"
       ]
     }
   },
@@ -241,55 +174,58 @@
   "firestore": {
     "structure": [
       {
-        "path": "/planets/{planetId}",
+        "path": "/genes/{geneId}",
         "definition": {
-          "entityName": "Planet",
+          "entityName": "Gene",
           "schema": {
-            "$ref": "#/backend/entities/Planet"
+            "$ref": "#/backend/entities/Gene"
           },
-          "description": "Stores planet data. No authentication needed for get or list. Ensures QAPs.",
+          "description": "Stores gene data. Readable by all authenticated users. Writable by admins only.",
           "params": [
             {
-              "name": "planetId",
-              "description": "The unique identifier of the planet."
+              "name": "geneId",
+              "description": "The unique identifier for the gene."
             }
           ]
         }
       },
       {
-        "path": "/missions/{missionId}",
+        "path": "/users/{userId}/dna_analyses/{analysisId}",
         "definition": {
-          "entityName": "Mission",
+          "entityName": "DnaAnalysis",
           "schema": {
-            "$ref": "#/backend/entities/Mission"
+            "$ref": "#/backend/entities/DnaAnalysis"
           },
-          "description": "Stores mission data. No authentication needed for get or list. Ensures QAPs.",
+          "description": "Stores DNA analysis data for each user. Users can only read/write their own analysis data.",
           "params": [
             {
-              "name": "missionId",
-              "description": "The unique identifier of the mission."
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            },
+            {
+              "name": "analysisId",
+              "description": "The unique identifier for the DNA analysis."
             }
           ]
         }
       },
       {
-        "path": "/real_time_data/{planetId}",
+        "path": "/space_research/{studyId}",
         "definition": {
-          "entityName": "RealTimeData",
+          "entityName": "SpaceResearch",
           "schema": {
-            "$ref": "#/backend/entities/RealTimeData"
+            "$ref": "#/backend/entities/SpaceResearch"
           },
-          "description": "Stores real-time data for planets.  No authentication needed for get or list. Ensures QAPs.",
+          "description": "Stores space research data. Readable by all authenticated users. Writable by admins only.",
           "params": [
             {
-              "name": "planetId",
-              "description": "The unique identifier of the planet."
+              "name": "studyId",
+              "description": "The unique identifier for the space research study."
             }
           ]
         }
       }
     ],
-    "reasoning": "The data structure prioritizes clear segregation and avoids hierarchical `get()` calls for authorization. This is achieved through structural segregation and, where necessary, denormalization.\n\n*   `/planets`: Stores planet data.  No authentication needed for `get` or `list`. Ensures QAPs.\n*   `/missions`: Stores mission data.  No authentication needed for `get` or `list`. Ensures QAPs.\n*   `/real_time_data`: Stores real-time data.  No authentication needed for `get` or `list`. Ensures QAPs.\n\nThis design avoids complex rule logic and ensures scalability and debuggability.  Since all collections are publicly readable, security rules will focus on preventing unauthorized writes."
+    "reasoning": "The Firestore data structure is designed to support a space biology knowledge engine, prioritizing authorization independence, clarity, and scalability. It incorporates denormalization to avoid chained `get()` calls in security rules, ensuring atomic operations and simplifying debugging. Structural segregation ensures that collections contain data with homogenous security needs, facilitating simpler rules and more secure `list` operations.  The design employs consistent access modeling for private and collaborative data.\n\nGenes are stored in a top-level `/genes` collection, readable by all authenticated users but writable only by admins (simulated by no write access for normal users). DNA analyses are stored in `/users/{userId}/dna_analyses/{analysisId}` to ensure that a user can only read or write their own analyses. Space research data is stored in the `/space_research` collection and is readable by all authenticated users, but only writable by admins (simulated by no write access for normal users).  This structure adheres to the principles outlined, including authorization independence by avoiding `get()` calls, clear separation of public and private data, and predictable schemas."
   }
 }
-    
