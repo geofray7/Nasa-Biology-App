@@ -3,8 +3,8 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { signInAnonymously } from 'firebase/auth';
-import { useAuth, useFirestore } from '@/firebase';
-import { doc, setDoc } from 'firebase/firestore';
+import { useAuth, useFirestore, setDocumentNonBlocking } from '@/firebase';
+import { doc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Rocket, Dna, FlaskConical, BarChart } from 'lucide-react';
@@ -18,32 +18,38 @@ export default function GuestPage() {
     try {
       // Sign in anonymously
       const userCredential = await signInAnonymously(auth);
-      
+      const { user } = userCredential;
+
       // Create guest user profile
-      await setDoc(doc(firestore, 'users', userCredential.user.uid), {
-        uid: userCredential.user.uid,
+      const userDocRef = doc(firestore, 'users', user.uid);
+      const userProfileData = {
+        uid: user.uid,
         displayName: 'Space Explorer',
-        email: `guest_${userCredential.user.uid}@example.com`,
+        email: `guest_${user.uid}@example.com`,
         role: 'guest',
         isGuest: true,
         joinedDate: new Date(),
         lastLogin: new Date(),
         isOnline: true
-      });
+      };
+      setDocumentNonBlocking(userDocRef, userProfileData, { merge: false });
 
       // Create guest stats
-      await setDoc(doc(firestore, 'user_stats', userCredential.user.uid), {
+      const userStatsRef = doc(firestore, 'user_stats', user.uid);
+      const userStatsData = {
         experimentsCompleted: 0,
         dnaAnalyses: 0,
         badges: ["Guest Explorer"],
         isGuest: true
-      });
+      };
+      setDocumentNonBlocking(userStatsRef, userStatsData, { merge: false });
 
       // Redirect to dashboard
       router.push('/dashboard');
 
     } catch (error) {
       console.error('Guest mode error:', error);
+      // Handle auth errors, but Firestore errors are handled by the emitter
     }
   };
 
