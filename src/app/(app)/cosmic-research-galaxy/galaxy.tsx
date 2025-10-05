@@ -1,438 +1,309 @@
-
 'use client';
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
+import { Canvas, useFrame } from '@react-three/fiber';
+import { OrbitControls, Stars, Sky } from '@react-three/drei';
+import * as THREE from 'three';
+import { type ResearchPapersOutput } from '@/ai/flows/get-research-papers';
 
-const AdvancedResearchGalaxy = ({ papers = [], onPaperSelect, searchQuery = '' }) => {
-  const [galaxyData, setGalaxyData] = useState([]);
-  const [selectedPaper, setSelectedPaper] = useState(null);
-  const [timeRange, setTimeRange] = useState([2010, 2024]);
-  const [selectedDomain, setSelectedDomain] = useState('All');
-  const [isAnimating, setIsAnimating] = useState(true);
-  const [simulationSpeed, setSimulationSpeed] = useState(1);
-  
-  const canvasRef = useRef(null);
-  const animationRef = useRef(null);
-  const particlesRef = useRef([]);
+// --- Helper Functions ---
 
-  // Domain color mapping
-  const domainColors = {
-    'microgravity': '#3b82f6',
-    'radiation': '#ef4444', 
-    'plant biology': '#22c55e',
-    'genomics': '#a855f7',
-    'astrobiology': '#f59e0b',
-    'materials science': '#ec4899',
-    'animal models': '#06b6d4',
-    'astronaut health': '#84cc16',
-    'deep space': '#f97316',
-    'terraforming': '#14b8a6',
-    'lunar exploration': '#a1a1aa',
-    'mars': '#dc2626',
-    'space biology': '#ffffff'
+// Smart domain detection
+const detectDomain = (paper: any) => {
+  const title = paper.title?.toLowerCase() || '';
+  const keywords = paper.keywords?.map((k: string) => k.toLowerCase()) || [];
+
+  if (keywords.includes('plant biology')) return 'plant_biology';
+  if (keywords.includes('microgravity')) return 'microbiology';
+  if (keywords.includes('radiation')) return 'radiation';
+  if (keywords.includes('astronaut health')) return 'human_biology';
+  if (keywords.includes('materials science')) return 'technology';
+  if (title.includes('plant') || title.includes('arabidopsis')) return 'plant_biology';
+  if (title.includes('microbial') || title.includes('microbiome') || title.includes('bacteria')) return 'microbiology';
+  if (title.includes('radiation') || title.includes('radiat')) return 'radiation';
+  if (title.includes('astronaut') || title.includes('human') || title.includes('health')) return 'human_biology';
+  if (title.includes('technology') || title.includes('sensor') || title.includes('device')) return 'technology';
+
+  return 'general';
+};
+
+const getDomainColor = (domain: string) => {
+  const colors: { [key: string]: string } = {
+    human_biology: '#ff6b6b',
+    plant_biology: '#51cf66',
+    microbiology: '#339af0',
+    radiation: '#cc5de8',
+    technology: '#ffd43b',
+    general: '#adb5bd',
+  };
+  return colors[domain] || '#adb5bd';
+};
+
+// Create beautiful spiral galaxy
+const calculateSpiralPosition = (index: number, total: number, domain: string): [number, number, number] => {
+  const angle = (index / total) * Math.PI * 8;
+  const radius = 1.5 + (index % 7);
+  const height = (Math.random() - 0.5) * 4;
+
+  const domainOffset: { [key: string]: number } = {
+    human_biology: 0,
+    plant_biology: Math.PI / 3,
+    microbiology: (Math.PI * 2) / 3,
+    radiation: Math.PI,
+    technology: (Math.PI * 4) / 3,
+    general: (Math.PI * 5) / 3,
   };
 
-  const getKeywordColor = (keywords) => {
-    if (!keywords || keywords.length === 0) return '#6b7280';
-    for (const keyword of keywords) {
-      const key = keyword.toLowerCase();
-      if (domainColors[key]) {
-        return domainColors[key];
-      }
+  return [
+    Math.cos(angle + (domainOffset[domain] || 0)) * radius,
+    height * 0.7,
+    Math.sin(angle + (domainOffset[domain] || 0)) * radius,
+  ];
+};
+
+const calculateStarSize = (paper: any) => {
+  const baseSize = 0.1;
+  const recencyBoost = (2024 - (paper.year || 2020)) * -0.02;
+  return baseSize + recencyBoost;
+};
+
+const calculateBrightness = (year: number) => {
+  const currentYear = new Date().getFullYear();
+  const yearsAgo = currentYear - (year || currentYear);
+  return Math.max(0.3, 1.0 - yearsAgo * 0.1);
+};
+
+
+// --- Components ---
+
+// Individual Paper Star Component
+const PaperStar = ({ paper, onClick, isSelected }: { paper: any; onClick: (p: any) => void; isSelected: boolean }) => {
+  const meshRef = useRef<THREE.Mesh>(null!);
+  const [hovered, setHovered] = useState(false);
+
+  useFrame((state) => {
+    if (meshRef.current) {
+      meshRef.current.rotation.y += 0.002;
+      meshRef.current.position.y += Math.sin(state.clock.elapsedTime + parseInt(paper.id, 10)) * 0.001;
+
+      const targetScale = hovered || isSelected ? 1.8 : paper.size;
+      meshRef.current.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 0.1);
     }
-    return '#6b7280';
-  }
-
-
-  // Initialize galaxy with force simulation
-  useEffect(() => {
-    if (!papers.length) return;
-
-    const initializeGalaxy = () => {
-      const filteredPapers = papers.filter(paper => 
-        paper.year >= timeRange[0] && 
-        paper.year <= timeRange[1] &&
-        (selectedDomain === 'All' || paper.keywords.includes(selectedDomain))
-      );
-
-      // Create initial positions in 3D space
-      const newGalaxyData = filteredPapers.map((paper, index) => {
-        const angle = (index / filteredPapers.length) * Math.PI * 2;
-        const radius = 150 + (paper.year - 2020) * 50;
-        const height = (paper.year - 2010) * 10;
-        
-        return {
-          ...paper,
-          x: Math.cos(angle) * radius,
-          y: height,
-          z: Math.sin(angle) * radius,
-          vx: 0, vy: 0, vz: 0, // Velocity
-          fx: 0, fy: 0, fz: 0, // Force
-          connections: paper.connections || []
-        };
-      });
-
-      setGalaxyData(newGalaxyData);
-      initializeParticles();
-    };
-
-    initializeGalaxy();
-  }, [papers, timeRange, selectedDomain]);
-
-  // Particle system for background
-  const initializeParticles = () => {
-    particlesRef.current = Array.from({ length: 200 }, () => ({
-      x: Math.random() * 2000 - 1000,
-      y: Math.random() * 2000 - 1000,
-      z: Math.random() * 2000 - 1000,
-      vx: (Math.random() - 0.5) * 0.2,
-      vy: (Math.random() - 0.5) * 0.2,
-      vz: (Math.random() - 0.5) * 0.2,
-      size: Math.random() * 2 + 0.5
-    }));
-  };
-
-  // Advanced force simulation
-  const runSimulation = useCallback(() => {
-    if (!isAnimating || !canvasRef.current) return;
-
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    const width = canvas.width;
-    const height = canvas.height;
-
-    // Clear with space gradient
-    const gradient = ctx.createRadialGradient(width/2, height/2, 0, width/2, height/2, width/1.5);
-    gradient.addColorStop(0, 'hsla(240, 10%, 3.9%, 0.1)');
-    gradient.addColorStop(1, 'hsl(240, 10%, 3.9%)');
-
-    ctx.fillStyle = 'hsl(240, 10%, 3.9%)';
-    ctx.fillRect(0, 0, width, height);
-
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, width, height);
-
-
-    // Draw star field
-    updateParticles(ctx, width, height);
-
-    // Apply forces and update positions
-    if (galaxyData.length > 0) {
-      applyForces();
-      updatePositions();
-      drawGalaxy(ctx, width, height);
-    }
-
-    animationRef.current = requestAnimationFrame(runSimulation);
-  }, [isAnimating, galaxyData, simulationSpeed]);
-
-  // Physics simulation
-  const applyForces = () => {
-    const centerForce = 0.0001;
-    const repulsionForce = 1000;
-    const attractionForce = 0.01;
-
-    galaxyData.forEach((paper, i) => {
-      // Reset forces
-      paper.fx = paper.fy = paper.fz = 0;
-
-      // Center attraction
-      paper.fx -= paper.x * centerForce;
-      paper.fy -= paper.y * centerForce;
-      paper.fz -= paper.z * centerForce;
-
-      // Repulsion between all papers
-      galaxyData.forEach((other, j) => {
-        if (i === j) return;
-
-        const dx = paper.x - other.x;
-        const dy = paper.y - other.y;
-        const dz = paper.z - other.z;
-        const distance = Math.sqrt(dx * dx + dy * dy + dz * dz) || 1;
-
-        const force = repulsionForce / (distance * distance);
-        paper.fx += (dx / distance) * force;
-        paper.fy += (dy / distance) * force;
-        paper.fz += (dz / distance) * force;
-      });
-
-    });
-  };
-
-  const updatePositions = () => {
-    const damping = 0.95;
-
-    setGalaxyData(prev => prev.map(paper => {
-      // Update velocity
-      paper.vx = (paper.vx + paper.fx) * damping;
-      paper.vy = (paper.vy + paper.fy) * damping;
-      paper.vz = (paper.vz + paper.fz) * damping;
-
-      // Update position
-      return {
-        ...paper,
-        x: paper.x + paper.vx * simulationSpeed,
-        y: paper.y + paper.vy * simulationSpeed,
-        z: paper.z + paper.vz * simulationSpeed
-      };
-    }));
-  };
-
-  const updateParticles = (ctx, width, height) => {
-    particlesRef.current.forEach(particle => {
-      particle.x += particle.vx;
-      particle.y += particle.vy;
-      particle.z += particle.vz;
-
-      if (Math.abs(particle.x) > 1000) particle.x = -particle.x;
-      if (Math.abs(particle.y) > 1000) particle.y = -particle.y;
-      if (Math.abs(particle.z) > 1000) particle.z = -particle.z;
-
-      const scale = 1000 / (1000 + particle.z);
-      const x2d = particle.x * scale + width / 2;
-      const y2d = particle.y * scale + height / 2;
-      const radius = particle.size * scale;
-
-      if (radius > 0) {
-        ctx.fillStyle = `rgba(255, 255, 255, ${0.3 + particle.z / 3000})`;
-        ctx.beginPath();
-        ctx.arc(x2d, y2d, radius, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    });
-  };
-
-  const drawGalaxy = (ctx, width, height) => {
-    // Sort by Z for proper layering
-    const sortedPapers = [...galaxyData].sort((a, b) => b.z - a.z);
-
-    // Draw papers
-    sortedPapers.forEach(paper => {
-      const scale = 1000 / (1000 + paper.z);
-      const x = paper.x * scale + width / 2;
-      const y = paper.y * scale + height / 2;
-      const size = (3 + (paper.year - 2020)) * scale;
-      
-      const isHighlighted = searchQuery && 
-        (paper.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-         paper.keywords.some(k => k.toLowerCase().includes(searchQuery.toLowerCase())));
-
-      const color = getKeywordColor(paper.keywords);
-      
-      // Glow effect
-      ctx.shadowColor = isHighlighted ? '#fbbf24' : color;
-      ctx.shadowBlur = isHighlighted ? 20 : 15;
-      
-      // Main circle
-      ctx.fillStyle = color;
-      ctx.beginPath();
-      ctx.arc(x, y, size, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Inner highlight
-      ctx.shadowBlur = 0;
-      ctx.fillStyle = 'hsl(240, 5.9%, 10%)';
-      ctx.beginPath();
-      ctx.arc(x, y, size * 0.4, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Click hit area (invisible)
-      ctx.fillStyle = 'transparent';
-      ctx.beginPath();
-      ctx.arc(x, y, size + 5, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Store clickable area data
-      paper.screenX = x;
-      paper.screenY = y;
-      paper.screenSize = size + 5;
-    });
-  };
-
-  // Handle canvas clicks
-  const handleCanvasClick = (event) => {
-    const canvas = canvasRef.current;
-    if(!canvas) return;
-    const rect = canvas.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
-
-    // Find the topmost paper that was clicked
-    const clickedPaper = [...galaxyData].sort((a,b) => b.z - a.z).find(paper => {
-      const dx = paper.screenX - x;
-      const dy = paper.screenY - y;
-      return Math.sqrt(dx * dx + dy * dy) <= paper.screenSize;
-    });
-
-    if (clickedPaper) {
-      setSelectedPaper(clickedPaper);
-      if (onPaperSelect) onPaperSelect(clickedPaper);
-    } else {
-      setSelectedPaper(null);
-    }
-  };
-
-  // Start animation
-  useEffect(() => {
-    if (isAnimating && canvasRef.current) {
-      animationRef.current = requestAnimationFrame(runSimulation);
-    }
-    return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
-    };
-  }, [isAnimating, runSimulation]);
-
-  const exportGalaxyImage = () => {
-    const canvas = canvasRef.current;
-    if(!canvas) return;
-    const link = document.createElement('a');
-    link.download = `nasa-research-galaxy-${new Date().getTime()}.png`;
-    link.href = canvas.toDataURL();
-    link.click();
-  };
-
-  const allKeywords = ['All', ...new Set(papers.flatMap(p => p.keywords))];
+  });
 
   return (
-    <div className="space-y-6">
-      {/* Control Panel */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Search & Filters */}
-        <div className="bg-card border rounded-lg p-6 lg:col-span-4 grid grid-cols-1 md:grid-cols-3 gap-6">
-          
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-muted-foreground mb-2">Time Range: {timeRange[0]} - {timeRange[1]}</label>
-            <div className="flex space-x-2 items-center">
-              <span className='text-xs'>{timeRange[0]}</span>
-              <input
-                  type="range"
-                  min="2010"
-                  max={timeRange[1]}
-                  value={timeRange[0]}
-                  onChange={(e) => setTimeRange([parseInt(e.target.value), timeRange[1]])}
-                  className="flex-1"
-                />
-              <input
-                type="range"
-                min={timeRange[0]}
-                max="2024"
-                value={timeRange[1]}
-                onChange={(e) => setTimeRange([timeRange[0], parseInt(e.target.value)])}
-                className="flex-1"
-              />
-              <span className='text-xs'>{timeRange[1]}</span>
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-muted-foreground mb-2">Domain Filter</label>
-              <select
-                value={selectedDomain}
-                onChange={(e) => setSelectedDomain(e.target.value)}
-                className="w-full bg-input border border-border rounded-lg px-3 py-2 text-foreground"
-              >
-                {allKeywords.map(domain => (
-                  <option key={domain} value={domain}>{domain}</option>
-                ))}
-              </select>
-          </div>
-        </div>
-      </div>
+    <mesh
+      ref={meshRef}
+      position={paper.position}
+      onClick={() => onClick(paper)}
+      onPointerOver={() => setHovered(true)}
+      onPointerOut={() => setHovered(false)}
+    >
+      <sphereGeometry args={[0.08, 16, 16]} />
+      <meshBasicMaterial
+        color={paper.color}
+        emissive={paper.color}
+        emissiveIntensity={paper.brightness}
+        transparent={true}
+        opacity={0.9}
+      />
+      <pointLight color={paper.color} intensity={0.4} distance={1.2} />
 
-      {/* Main Visualization */}
-      <div className="bg-card rounded-lg p-1 relative overflow-hidden border">
-        <canvas
-          ref={canvasRef}
-          width={1200}
-          height={800}
-          className="w-full h-[70vh] cursor-pointer rounded-lg"
-          onClick={handleCanvasClick}
+      {(hovered || isSelected) && (
+        <mesh scale={[2, 2, 2]}>
+          <sphereGeometry args={[0.1, 8, 8]} />
+          <meshBasicMaterial color={paper.color} transparent={true} opacity={0.3} />
+        </mesh>
+      )}
+    </mesh>
+  );
+};
+
+// Constellation Lines Component
+const ConstellationLines = ({ papers, links, constellationMode }: { papers: any[], links: any[], constellationMode: boolean }) => {
+    const linesRef = useRef<THREE.Group>(null!);
+
+    useFrame(() => {
+        if (linesRef.current && constellationMode) {
+            linesRef.current.rotation.y += 0.001;
+        }
+    });
+
+    if (!constellationMode) return null;
+
+    const paperMap = new Map(papers.map(p => [p.id, p]));
+
+    const lineGeometries = links.map((link, index) => {
+        const sourcePaper = paperMap.get(link.source);
+        const targetPaper = paperMap.get(link.target);
+
+        if (!sourcePaper || !targetPaper) return null;
+
+        const start = new THREE.Vector3(...sourcePaper.position);
+        const end = new THREE.Vector3(...targetPaper.position);
+
+        return (
+            <line key={index}>
+                <bufferGeometry attach="geometry">
+                    <bufferAttribute
+                        attach="attributes-position"
+                        count={2}
+                        array={new Float32Array([...start.toArray(), ...end.toArray()])}
+                        itemSize={3}
+                    />
+                </bufferGeometry>
+                <lineBasicMaterial color={sourcePaper.color} opacity={0.3} transparent />
+            </line>
+        );
+    }).filter(Boolean);
+
+    return <group ref={linesRef}>{lineGeometries}</group>;
+};
+
+// --- Main Galaxy Component ---
+
+interface ResearchGalaxyProps {
+  papersData: ResearchPapersOutput;
+}
+
+const ResearchGalaxy = ({ papersData }: ResearchGalaxyProps) => {
+  const [selectedPaper, setSelectedPaper] = useState<any>(null);
+  const [researchPapers, setResearchPapers] = useState<any[]>([]);
+  const [filter, setFilter] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [constellationMode, setConstellationMode] = useState(true);
+  const controlsRef = useRef<any>(null);
+
+  useEffect(() => {
+    if (papersData?.nodes) {
+        const papers3D = papersData.nodes.map((paper, index) => {
+            const domain = detectDomain(paper);
+            return {
+                ...paper,
+                domain: domain,
+                position: calculateSpiralPosition(index, papersData.nodes.length, domain),
+                color: getDomainColor(domain),
+                size: calculateStarSize(paper),
+                brightness: calculateBrightness(paper.year),
+            };
+        });
+        setResearchPapers(papers3D);
+    }
+  }, [papersData]);
+
+  const filteredPapers = researchPapers.filter(paper => {
+    const matchesSearch = !searchTerm ||
+      paper.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      paper.author?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesFilter = filter === 'all' || paper.domain === filter;
+    
+    return matchesSearch && matchesFilter;
+  });
+  
+  const resetView = () => {
+    if (controlsRef.current) {
+      controlsRef.current.reset();
+    }
+  };
+
+  return (
+    <div className="w-full h-[85vh] relative bg-black overflow-hidden rounded-lg">
+      <Canvas camera={{ position: [0, 0, 8], fov: 75 }}>
+        <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} />
+        <Sky distance={450000} sunPosition={[0, 1, 0]} inclination={0} azimuth={0.25} />
+        <fog attach="fog" args={['#000022', 5, 25]} />
+        
+        <ConstellationLines papers={researchPapers} links={papersData.links} constellationMode={constellationMode} />
+        
+        {filteredPapers.map((paper) => (
+          <PaperStar 
+            key={paper.id} 
+            paper={paper}
+            onClick={setSelectedPaper}
+            isSelected={selectedPaper?.id === paper.id}
+          />
+        ))}
+        
+        <OrbitControls 
+          ref={controlsRef}
+          enableZoom={true}
+          enablePan={true}
+          enableRotate={true}
+          minDistance={3}
+          maxDistance={25}
+          rotateSpeed={0.3}
         />
         
-        {/* HUD Overlay */}
-        <div className="absolute top-4 left-4 bg-background/80 backdrop-blur-sm p-3 rounded-lg border">
-          <div className="text-sm text-muted-foreground">
-            <div>🖱️ Click papers for details</div>
-            <div>🔍 {searchQuery ? `Searching: "${searchQuery}"` : 'No active search'}</div>
-            <div>Displaying: {galaxyData.length} / {papers.length} papers</div>
-          </div>
-        </div>
-
-        {/* Performance Indicator */}
-        <div className="absolute bottom-4 right-4 bg-background/80 backdrop-blur-sm p-2 rounded-lg border">
-          <div className="flex items-center gap-2 text-sm">
-            <button
-                onClick={() => setIsAnimating(!isAnimating)}
-                className="text-muted-foreground hover:text-foreground"
-              >
-              {isAnimating ? '⏸' : '▶️'}
-            </button>
-            <div className={`w-2 h-2 rounded-full ${isAnimating ? 'bg-green-400 animate-pulse' : 'bg-gray-400'}`}></div>
-            <span className="text-muted-foreground">
-              {isAnimating ? 'Live Sim' : 'Paused'}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Selected Paper Details */}
+        <ambientLight intensity={0.15} />
+        <pointLight position={[10, 10, 10]} intensity={0.3} />
+        <pointLight position={[-10, -5, -5]} intensity={0.2} color="#0044ff" />
+      </Canvas>
+      
       {selectedPaper && (
-        <div className="bg-card rounded-lg p-6 border animate-fade-in">
-          <div className="flex justify-between items-start mb-4">
-            <h2 className="text-2xl font-bold font-headline">{selectedPaper.title}</h2>
-            <button
-              onClick={() => setSelectedPaper(null)}
-              className="text-muted-foreground hover:text-foreground"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-            </button>
+        <div className="absolute top-5 right-5 bg-[#000a1e]/95 text-white p-0 rounded-2xl max-w-md max-h-[80vh] overflow-y-auto backdrop-blur-lg border border-blue-900/50 shadow-2xl shadow-blue-500/10">
+          <div className="p-5 border-l-4" style={{ borderLeftColor: selectedPaper.color }}>
+            <div className="flex justify-between items-start">
+              <h3 className="m-0 text-lg leading-snug flex-1">{selectedPaper.title}</h3>
+              <button onClick={() => setSelectedPaper(null)} className="bg-transparent border-none text-white text-2xl cursor-pointer p-1 ml-2">&times;</button>
+            </div>
           </div>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="space-y-4">
-              <div className="bg-muted p-4 rounded-lg">
-                <h3 className="text-lg font-semibold mb-3">Paper Information</h3>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Author:</span>
-                    <span className="text-foreground text-right">{selectedPaper.author}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Year:</span>
-                    <span className="text-foreground">{selectedPaper.year}</span>
-                  </div>
-                </div>
+          <div className="p-5 border-t border-white/10">
+              <p className="text-sm opacity-90 mb-2">{selectedPaper.author}</p>
+              <div className="flex gap-4 text-xs opacity-70 mb-2">
+                  <span className="year">{selectedPaper.year}</span>
               </div>
-
-            </div>
-
-            <div className="lg:col-span-2">
-              <div className="bg-muted p-4 rounded-lg">
-                <h3 className="text-lg font-semibold mb-3">Summary</h3>
-                <p className="text-muted-foreground leading-relaxed">{selectedPaper.summary}</p>
+              <div className="inline-block px-2 py-1 rounded-full text-xs font-bold text-black" style={{ backgroundColor: selectedPaper.color }}>
+                  {selectedPaper.domain.replace('_', ' ').toUpperCase()}
               </div>
-
-              {selectedPaper.keywords && selectedPaper.keywords.length > 0 && (
-                <div className="mt-4">
-                  <h4 className="text-lg font-semibold mb-2">Keywords</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedPaper.keywords.map((keyword, index) => (
-                      <span
-                        key={index}
-                        className="px-3 py-1 bg-muted rounded-full text-sm text-muted-foreground border"
-                      >
-                        {keyword}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+          </div>
+          <div className="p-5 border-t border-white/10">
+              <strong>Summary:</strong>
+              <p className="text-sm italic opacity-90 mt-1">{selectedPaper.summary}</p>
           </div>
         </div>
       )}
+      
+      <div className="absolute bottom-6 left-6 bg-[#000a1e]/90 p-5 rounded-xl text-white backdrop-blur-lg border border-blue-900/40 min-w-[250px]">
+        <h4 className="m-0 mb-4 text-blue-400 font-bold">🌌 Research Galaxy</h4>
+        <input
+          type="text"
+          placeholder="🔍 Search papers..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full p-2 border border-blue-900/60 bg-white/10 text-white rounded-md mb-2.5"
+        />
+        <select value={filter} onChange={(e) => setFilter(e.target.value)} className="w-full p-2 border border-blue-900/60 bg-white/10 text-white rounded-md mb-2.5">
+          <option value="all" className="text-black">All Domains</option>
+          <option value="human_biology" className="text-black">Human Biology</option>
+          <option value="plant_biology" className="text-black">Plant Biology</option>
+          <option value="microbiology" className="text-black">Microbiology</option>
+          <option value="radiation" className="text-black">Radiation</option>
+          <option value="technology" className="text-black">Technology</option>
+        </select>
+        <div className="grid grid-cols-2 gap-2 mb-2.5">
+          <button 
+            className={`p-1.5 border border-blue-900/60 bg-blue-500/30 text-white rounded text-xs cursor-pointer ${constellationMode ? 'bg-blue-500/50 border-blue-400' : ''}`}
+            onClick={() => setConstellationMode(!constellationMode)}
+          >
+            {constellationMode ? '🔗 Connections On' : '🔗 Connections Off'}
+          </button>
+          <button onClick={resetView} className="p-1.5 border border-blue-900/60 bg-blue-500/30 text-white rounded text-xs cursor-pointer">🎯 Reset View</button>
+        </div>
+        <div className="text-xs opacity-80 text-center">
+          Exploring: <strong>{filteredPapers.length}</strong> papers
+        </div>
+      </div>
+      
+      <div className="absolute top-5 left-6 bg-[#000a1e]/90 p-4 rounded-xl text-white backdrop-blur-lg border border-blue-900/40 text-xs">
+        <h5 className="m-0 mb-2.5 text-blue-400 font-bold">Research Domains</h5>
+        <div className="flex items-center mb-1.5"><span className="w-2.5 h-2.5 rounded-full mr-2" style={{ background: '#ff6b6b' }}></span>Human Biology</div>
+        <div className="flex items-center mb-1.5"><span className="w-2.5 h-2.5 rounded-full mr-2" style={{ background: '#51cf66' }}></span>Plant Biology</div>
+        <div className="flex items-center mb-1.5"><span className="w-2.5 h-2.5 rounded-full mr-2" style={{ background: '#339af0' }}></span>Microbiology</div>
+        <div className="flex items-center mb-1.5"><span className="w-2.5 h-2.5 rounded-full mr-2" style={{ background: '#cc5de8' }}></span>Radiation</div>
+        <div className="flex items-center"><span className="w-2.5 h-2.5 rounded-full mr-2" style={{ background: '#ffd43b' }}></span>Technology</div>
+      </div>
     </div>
   );
 };
 
-export default AdvancedResearchGalaxy;
+export default ResearchGalaxy;

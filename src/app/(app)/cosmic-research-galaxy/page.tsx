@@ -1,47 +1,37 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
 import { getResearchPapers, type ResearchPapersOutput } from '@/ai/flows/get-research-papers';
-import AdvancedResearchGalaxy from './galaxy';
-import { Input } from '@/components/ui/input';
-import { Card, CardHeader } from '@/components/ui/card';
+import ResearchGalaxy from './galaxy';
 
 export default function CosmicResearchGalaxyPage() {
   const [data, setData] = useState<ResearchPapersOutput>({ nodes: [], links: [] });
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
+    setLoading(true);
     getResearchPapers().then((fetchedData) => {
       setData(fetchedData);
+      setLoading(false);
+    }).catch(error => {
+      console.error("Failed to fetch research papers:", error);
       setLoading(false);
     });
   }, []);
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-center space-y-4">
-          <div className="text-4xl animate-spin">🌌</div>
-          <p className="text-muted-foreground">Loading Research Galaxy...</p>
-        </div>
+      <div className="flex flex-col items-center justify-center h-full w-full bg-black text-white">
+        <div className="text-4xl mb-4 animate-[bounce_2s_ease-in-out_infinite]">🚀</div>
+        <h3 className="text-2xl font-bold mb-2">Initializing Research Galaxy...</h3>
+        <p className="text-blue-300">Calibrating star charts and aligning constellations...</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <Input 
-            placeholder="Search for papers by title or keyword..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </CardHeader>
-      </Card>
-      <AdvancedResearchGalaxy papers={data.nodes} searchQuery={searchQuery} />
+    <div className="w-full h-full p-0 m-0">
+      <ResearchGalaxy papersData={data} />
     </div>
   );
 }
