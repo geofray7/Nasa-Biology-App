@@ -18,6 +18,7 @@ import {
   Users,
   Trophy,
   Code2,
+  BrainCircuit,
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
@@ -35,6 +36,11 @@ export const navItems = [
     icon: Orbit,
   },
   { href: '/dna-cosmic-explorer', label: 'DNA Explorer', icon: Code2 },
+  {
+    href: '/astro-genetic-engineering-studio',
+    label: 'Genetic Engineering',
+    icon: BrainCircuit,
+  },
   { href: '/virtual-space-laboratory', label: 'Virtual Lab', icon: FlaskConical },
   {
     href: '/astronaut-health-dashboard',

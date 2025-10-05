@@ -19,6 +19,12 @@
       "imageHint": "DNA helix"
     },
     {
+      "id": "dashboard_engineering",
+      "description": "A futuristic holographic interface showing genetic data.",
+      "imageUrl": "https://images.unsplash.com/photo-1618988522021-29fc0adde1aa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxnZW5ldGljJTIwZW5naW5lZXJpbmd8ZW58MHx8fHwxNzU5NjQ1NTc4fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "genetic engineering"
+    },
+    {
       "id": "dashboard_lab",
       "description": "A futuristic science laboratory with glowing equipment.",
       "imageUrl": "https://images.unsplash.com/photo-1646956141733-2d456a4d337a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8c2NpZW5jZSUyMGxhYm9yYXRvcnl8ZW58MHx8fHwxNzU5NTA3NzcyfDA&ixlib=rb-4.1.0&q=80&w=1080",

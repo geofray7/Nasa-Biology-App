@@ -16,6 +16,7 @@ import {
   MessageSquare,
   Orbit,
   Code2,
+  BrainCircuit,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -40,6 +41,13 @@ const features = [
     href: '/dna-cosmic-explorer',
     icon: Code2,
     image_id: 'dashboard_dna',
+  },
+  {
+    title: 'Astro-Genetic Engineering Studio',
+    description: 'Design organisms and proteins for space environments.',
+    href: '/astro-genetic-engineering-studio',
+    icon: BrainCircuit,
+    image_id: 'dashboard_engineering',
   },
   {
     title: 'Virtual Space Laboratory',
@@ -73,7 +81,7 @@ export default function DashboardPage() {
           Explore the frontiers of space biology with the NASA Knowledge Engine.
         </p>
       </div>
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {features.map((feature) => {
           const placeholder = PlaceHolderImages.find(
             (p) => p.id === feature.image_id
