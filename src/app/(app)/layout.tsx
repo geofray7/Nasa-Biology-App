@@ -3,33 +3,12 @@ import type { ReactNode } from 'react';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/app-sidebar';
 import { AppHeader } from '@/components/app-header';
-import { SettingsProvider, useSettingsContext } from '@/hooks/use-settings.tsx';
-import { useUser } from '@/firebase';
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { SettingsProvider } from '@/hooks/use-settings.tsx';
 
-function ProtectedContent({ children }: { children: ReactNode }) {
-  const { isLoaded, settings } = useSettingsContext();
-  const { user, isUserLoading } = useUser();
-  const router = useRouter();
 
-  useEffect(() => {
-    if (!isUserLoading && !user) {
-      router.push('/login');
-    }
-  }, [isUserLoading, user, router]);
+function AppContent({ children }: { children: ReactNode }) {
+  const { settings } = useSettingsContext();
 
-  if (!isLoaded || isUserLoading || !user) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-background text-foreground">
-        <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin text-4xl">🚀</div>
-          <p>Authenticating & Initializing NASA Systems...</p>
-        </div>
-      </div>
-    );
-  }
-  
   return (
     <div className={`theme-${settings.theme} font-${settings.fontSize}`}>
       <SidebarProvider>
@@ -48,7 +27,7 @@ function ProtectedContent({ children }: { children: ReactNode }) {
 export default function AppLayout({ children }: { children: ReactNode }) {
   return (
       <SettingsProvider>
-        <ProtectedContent>{children}</ProtectedContent>
+        <AppContent>{children}</AppContent>
       </SettingsProvider>
   );
 }

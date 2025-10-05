@@ -6,8 +6,6 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-  SidebarFooter,
-  SidebarSeparator,
 } from '@/components/ui/sidebar';
 import {
   Rocket,
@@ -20,16 +18,9 @@ import {
   Users,
   Trophy,
   Code2,
-  LogIn,
-  UserPlus,
-  LogOut,
-  User as UserIcon,
 } from 'lucide-react';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useAuth, useUser } from '@/firebase';
-import { signOut } from 'firebase/auth';
 
 export const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -61,14 +52,6 @@ export const navItems = [
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const { user } = useUser();
-  const auth = useAuth();
-  const router = useRouter();
-
-  const handleSignOut = async () => {
-    await signOut(auth);
-    router.push('/');
-  }
 
   return (
     <Sidebar>
@@ -93,66 +76,6 @@ export function AppSidebar() {
           </SidebarMenuItem>
         ))}
       </SidebarMenu>
-      <SidebarSeparator className="my-2" />
-      <SidebarFooter>
-        {user ? (
-          <>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton as={Link} href="/profile" tooltip="Profile">
-                  <UserIcon />
-                  <span>Profile</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton onClick={handleSignOut} tooltip={user.isAnonymous ? "Exit Guest Mode" : "Sign Out"}>
-                  <LogOut />
-                  <span>{user.isAnonymous ? "Exit Guest Mode" : "Sign Out"}</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-            <SidebarSeparator className="my-2" />
-            <div className="flex items-center gap-3 p-2">
-              <Avatar>
-                <AvatarImage src={user.photoURL ?? ''} data-ai-hint="profile picture" />
-                <AvatarFallback>
-                  {user.displayName?.charAt(0) ?? user.email?.charAt(0)}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex flex-col overflow-hidden">
-                <span className="truncate text-sm font-semibold">
-                  {user.displayName ?? 'Explorer'}
-                  {user.isAnonymous && " (Guest)"}
-                </span>
-                <span className="truncate text-xs text-muted-foreground">
-                  {user.email}
-                </span>
-              </div>
-            </div>
-          </>
-        ) : (
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton as={Link} href="/login" tooltip="Sign In">
-                <LogIn />
-                <span>Sign In</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton as={Link} href="/signup" tooltip="Sign Up">
-                <UserPlus />
-                <span>Sign Up</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-             <SidebarMenuItem>
-              <SidebarMenuButton as={Link} href="/guest" tooltip="Guest Mode">
-                <UserIcon />
-                <span>Guest Mode</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        )}
-      </SidebarFooter>
     </Sidebar>
   );
 }
