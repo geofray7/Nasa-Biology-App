@@ -1,3 +1,4 @@
+
 'use client';
 import React, { useState, useEffect } from 'react';
 
@@ -82,7 +83,6 @@ const VirtualLab = () => {
   };
   
   const predictMicrobiomeChanges = () => {
-    // Dummy implementation for microbiome as it was not in the original
     const gravityEffect = 1 - gravity * 0.5;
     const stability = 100 - gravityEffect * 50 - Math.abs(nutrients - 80);
     return {
