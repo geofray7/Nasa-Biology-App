@@ -1,5 +1,5 @@
 'use client';
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface Paper {
   id: string;
@@ -9,19 +9,16 @@ interface Paper {
   domain: string;
   color: string;
   citation?: string;
-  doi?: string;
   journal?: string;
-  x?: number;
-  y?: number;
+  abstract?: string;
 }
 
 const ResearchGalaxy = () => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [selectedPaper, setSelectedPaper] = useState<Paper | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState('all');
 
-  // REAL NASA SPACE BIOLOGY PAPERS
+  // REAL NASA PAPERS DATA
   const allPapers: Paper[] = [
     {
       id: '1',
@@ -31,7 +28,8 @@ const ResearchGalaxy = () => {
       domain: 'plant_biology',
       color: '#22c55e',
       journal: 'Space Biology Research',
-      citation: 'NASA-TP-2023-415'
+      citation: 'NASA-TP-2023-415',
+      abstract: 'Study examining root growth patterns and gene expression in Arabidopsis thaliana under microgravity conditions aboard the International Space Station.'
     },
     {
       id: '2',
@@ -41,7 +39,8 @@ const ResearchGalaxy = () => {
       domain: 'radiation',
       color: '#a855f7',
       journal: 'Radiation Research',
-      citation: 'NASA-RS-2024-228'
+      citation: 'NASA-RS-2024-228',
+      abstract: 'Comprehensive analysis of DNA damage and repair mechanisms in astronaut blood samples following long-duration spaceflight missions.'
     },
     {
       id: '3',
@@ -51,7 +50,8 @@ const ResearchGalaxy = () => {
       domain: 'microbiology',
       color: '#3b82f6',
       journal: 'Microbial Ecology',
-      citation: 'NASA-MB-2023-112'
+      citation: 'NASA-MB-2023-112',
+      abstract: 'Longitudinal study of microbial population changes in ISS life support systems and their impact on spacecraft environmental control.'
     },
     {
       id: '4',
@@ -61,7 +61,8 @@ const ResearchGalaxy = () => {
       domain: 'human_biology',
       color: '#ef4444',
       journal: 'Space Medicine',
-      citation: 'NASA-HR-2024-309'
+      citation: 'NASA-HR-2024-309',
+      abstract: 'Analysis of cardiovascular deconditioning and countermeasure effectiveness in astronauts during 6-month ISS missions.'
     },
     {
       id: '5',
@@ -71,7 +72,8 @@ const ResearchGalaxy = () => {
       domain: 'technology',
       color: '#eab308',
       journal: 'Space Technology',
-      citation: 'NASA-TD-2024-118'
+      citation: 'NASA-TD-2024-118',
+      abstract: 'Development and validation of novel biosensor technologies for real-time monitoring of biological systems in space environments.'
     },
     {
       id: '6',
@@ -81,7 +83,8 @@ const ResearchGalaxy = () => {
       domain: 'plant_biology',
       color: '#16a34a',
       journal: 'Astrobiology',
-      citation: 'NASA-AG-2023-225'
+      citation: 'NASA-AG-2023-225',
+      abstract: 'Investigation of plant viability and nutritional content when grown in Mars soil simulants under controlled environment conditions.'
     },
     {
       id: '7',
@@ -91,7 +94,8 @@ const ResearchGalaxy = () => {
       domain: 'human_biology',
       color: '#dc2626',
       journal: 'Stem Cell Research',
-      citation: 'NASA-SC-2024-431'
+      citation: 'NASA-SC-2024-431',
+      abstract: 'Effects of simulated space radiation on neural stem cell differentiation and potential implications for cognitive function during spaceflight.'
     },
     {
       id: '8',
@@ -101,7 +105,8 @@ const ResearchGalaxy = () => {
       domain: 'microbiology',
       color: '#1d4ed8',
       journal: 'Space Pharmacology',
-      citation: 'NASA-PH-2023-334'
+      citation: 'NASA-PH-2023-334',
+      abstract: 'Evaluation of antibiotic effectiveness against bacterial pathogens under microgravity and its implications for astronaut healthcare.'
     },
     {
       id: '9',
@@ -111,7 +116,8 @@ const ResearchGalaxy = () => {
       domain: 'technology',
       color: '#ca8a04',
       journal: 'Biotechnology Advances',
-      citation: 'NASA-BE-2024-127'
+      citation: 'NASA-BE-2024-127',
+      abstract: 'Development of organ-on-chip platforms to model human physiological responses to space environment stressors.'
     },
     {
       id: '10',
@@ -121,11 +127,12 @@ const ResearchGalaxy = () => {
       domain: 'human_biology',
       color: '#b91c1c',
       journal: 'Bone Research',
-      citation: 'NASA-BD-2023-418'
+      citation: 'NASA-BD-2023-418',
+      abstract: 'Longitudinal study of bone mineral density loss in astronauts and effectiveness of exercise countermeasures during space missions.'
     }
   ];
 
-  // Filter papers based on search and domain
+  // Filter papers
   const filteredPapers = allPapers.filter(paper => {
     const matchesSearch = !searchTerm || 
       paper.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -136,322 +143,283 @@ const ResearchGalaxy = () => {
     return matchesSearch && matchesFilter;
   });
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    // Set canvas size
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-
-    const drawGalaxy = () => {
-      // Deep space background
-      ctx.fillStyle = '#000011';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      // Distant stars
-      ctx.fillStyle = '#ffffff';
-      for (let i = 0; i < 800; i++) {
-        const x = Math.random() * canvas.width;
-        const y = Math.random() * canvas.height;
-        const size = Math.random() * 1.2;
-        const opacity = Math.random() * 0.8 + 0.2;
-        
-        ctx.globalAlpha = opacity;
-        ctx.beginPath();
-        ctx.arc(x, y, size, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      ctx.globalAlpha = 1;
-
-      // Nebula effect
-      const nebula = ctx.createRadialGradient(
-        canvas.width * 0.3, canvas.height * 0.7, 0,
-        canvas.width * 0.3, canvas.height * 0.7, canvas.width * 0.8
-      );
-      nebula.addColorStop(0, 'rgba(30, 10, 80, 0.3)');
-      nebula.addColorStop(1, 'rgba(0, 0, 30, 0.1)');
-      ctx.fillStyle = nebula;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      // Calculate star positions in a spiral
-      const centerX = canvas.width / 2;
-      const centerY = canvas.height / 2;
-      const baseRadius = Math.min(canvas.width, canvas.height) * 0.25;
-
-      filteredPapers.forEach((paper, index) => {
-        const angle = (index / filteredPapers.length) * Math.PI * 6;
-        const radius = baseRadius + (index % 4) * 40;
-        const x = centerX + Math.cos(angle) * radius;
-        const y = centerY + Math.sin(angle) * radius;
-
-        paper.x = x;
-        paper.y = y;
-
-        // Star glow effect
-        const glow = ctx.createRadialGradient(x, y, 0, x, y, 35);
-        glow.addColorStop(0, paper.color + 'CC');
-        glow.addColorStop(0.7, paper.color + '33');
-        glow.addColorStop(1, paper.color + '00');
-
-        ctx.fillStyle = glow;
-        ctx.beginPath();
-        ctx.arc(x, y, 35, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Main star
-        ctx.fillStyle = paper.color;
-        ctx.beginPath();
-        ctx.arc(x, y, 10, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Star core
-        ctx.fillStyle = '#ffffff';
-        ctx.beginPath();
-        ctx.arc(x, y, 4, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Constellation lines (connect related papers)
-        if (index < filteredPapers.length - 1 && paper.domain === filteredPapers[index + 1].domain) {
-          const nextPaper = filteredPapers[index + 1];
-          ctx.strokeStyle = paper.color + '66';
-          ctx.lineWidth = 1.5;
-          ctx.setLineDash([5, 5]);
-          ctx.beginPath();
-          ctx.moveTo(x, y);
-          ctx.lineTo(nextPaper.x!, nextPaper.y!);
-          ctx.stroke();
-          ctx.setLineDash([]);
-        }
-      });
-
-      // Pulsing animation for selected paper
-      if (selectedPaper && selectedPaper.x && selectedPaper.y) {
-        const pulse = (Date.now() * 0.005) % Math.PI * 2;
-        const pulseSize = Math.sin(pulse) * 5 + 20;
-        
-        const selectedGlow = ctx.createRadialGradient(
-          selectedPaper.x, selectedPaper.y, 0,
-          selectedPaper.x, selectedPaper.y, pulseSize + 20
-        );
-        selectedGlow.addColorStop(0, selectedPaper.color + 'AA');
-        selectedGlow.addColorStop(1, selectedPaper.color + '00');
-        
-        ctx.fillStyle = selectedGlow;
-        ctx.beginPath();
-        ctx.arc(selectedPaper.x, selectedPaper.y, pulseSize + 20, 0, Math.PI * 2);
-        ctx.fill();
-      }
+  // Calculate star positions in a spiral
+  const getStarPosition = (index: number, total: number) => {
+    const angle = (index / total) * Math.PI * 6;
+    const radius = 120 + (index % 4) * 40;
+    const centerX = 50; // % from left
+    const centerY = 50; // % from top
+    
+    return {
+      left: `${centerX + Math.cos(angle) * (radius / 10)}%`,
+      top: `${centerY + Math.sin(angle) * (radius / 10)}%`
     };
-
-    let animationFrameId: number;
-    const animate = () => {
-      drawGalaxy();
-      animationFrameId = requestAnimationFrame(animate);
-    };
-
-    animate();
-
-    // Click handler
-    const handleClick = (event: MouseEvent) => {
-      const rect = canvas.getBoundingClientRect();
-      const x = event.clientX - rect.left;
-      const y = event.clientY - rect.top;
-
-      let clickedPaper: Paper | null = null;
-      filteredPapers.forEach(paper => {
-        if (paper.x && paper.y) {
-          const distance = Math.sqrt((x - paper.x) ** 2 + (y - paper.y) ** 2);
-          if (distance < 25) {
-            clickedPaper = paper;
-          }
-        }
-      });
-
-      setSelectedPaper(clickedPaper);
-    };
-
-    canvas.addEventListener('click', handleClick);
-
-    // Handle window resize
-    const handleResize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    };
-
-    window.addEventListener('resize', handleResize);
-
-    return () => {
-      cancelAnimationFrame(animationFrameId);
-      canvas.removeEventListener('click', handleClick);
-      window.removeEventListener('resize', handleResize);
-    };
-  }, [filteredPapers, selectedPaper]);
+  };
 
   return (
-    <div className="relative w-full h-screen bg-black overflow-hidden">
-      {/* Main Canvas */}
-      <canvas 
-        ref={canvasRef} 
-        className="w-full h-full cursor-pointer absolute inset-0"
-      />
-      
-      {/* Header */}
-      <div className="absolute top-6 left-1/2 transform -translate-x-1/2 bg-gray-900/80 backdrop-blur-sm text-white px-6 py-3 rounded-full border border-gray-600">
-        <h1 className="text-xl font-bold text-center">
-          🌌 NASA Space Biology Research Galaxy
-        </h1>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 relative overflow-hidden">
+      {/* Animated Background */}
+      <div className="absolute inset-0">
+        {/* Stars */}
+        <div className="absolute inset-0">
+          {Array.from({ length: 150 }).map((_, i) => (
+            <div
+              key={i}
+              className="absolute bg-white rounded-full animate-pulse"
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+                width: `${Math.random() * 2 + 1}px`,
+                height: `${Math.random() * 2 + 1}px`,
+                opacity: Math.random() * 0.7 + 0.3,
+                animationDelay: `${Math.random() * 5}s`,
+                animationDuration: `${Math.random() * 3 + 2}s`
+              }}
+            />
+          ))}
+        </div>
+
+        {/* Nebula Effects */}
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse"></div>
       </div>
 
-      {/* Paper Details Panel */}
-      {selectedPaper && (
-        <div className="absolute top-20 right-6 bg-gray-900/95 backdrop-blur-md text-white p-6 rounded-xl max-w-md border-l-4 shadow-2xl"
-             style={{ borderLeftColor: selectedPaper.color }}>
-          <div className="flex justify-between items-start mb-4">
-            <h3 className="text-xl font-bold flex-1 mr-4 leading-tight">
-              {selectedPaper.title}
-            </h3>
-            <button 
-              onClick={() => setSelectedPaper(null)}
-              className="text-white hover:text-gray-300 text-xl font-bold flex-shrink-0 ml-2"
-            >
-              ✕
-            </button>
-          </div>
-          
-          <div className="space-y-3">
-            <div className="text-gray-300 text-sm leading-relaxed">
-              {selectedPaper.authors}
+      {/* Main Content */}
+      <div className="relative z-10 container mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="text-center mb-12">
+          <h1 className="text-5xl font-bold text-white mb-4">
+            🌌 NASA Research Galaxy
+          </h1>
+          <p className="text-xl text-purple-200">
+            Explore Space Biology Research Papers
+          </p>
+        </div>
+
+        <div className="grid lg:grid-cols-4 gap-8">
+          {/* Left Sidebar - Controls */}
+          <div className="lg:col-span-1 space-y-6">
+            {/* Search */}
+            <div className="bg-slate-800/50 backdrop-blur-lg rounded-2xl p-6 border border-slate-700">
+              <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
+                <span className="text-blue-400">🔍</span>
+                Search Research
+              </h3>
+              <input
+                type="text"
+                placeholder="Search papers or authors..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+              />
             </div>
-            
-            <div className="flex items-center gap-4 text-gray-400 text-sm">
-              <span className="flex items-center gap-1">
-                📅 {selectedPaper.year}
-              </span>
-              <span className="flex items-center gap-1">
-                🔬 {selectedPaper.journal}
-              </span>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <div 
-                className="px-3 py-1 rounded-full text-xs font-bold text-black"
-                style={{ backgroundColor: selectedPaper.color }}
+
+            {/* Filters */}
+            <div className="bg-slate-800/50 backdrop-blur-lg rounded-2xl p-6 border border-slate-700">
+              <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
+                <span className="text-green-400">🗂️</span>
+                Research Domains
+              </h3>
+              <select 
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+                className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-xl text-white focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all"
               >
-                {selectedPaper.domain.replace('_', ' ').toUpperCase()}
+                <option value="all">🌐 All Domains</option>
+                <option value="plant_biology">🌱 Plant Biology</option>
+                <option value="human_biology">👨‍🚀 Human Biology</option>
+                <option value="microbiology">🦠 Microbiology</option>
+                <option value="radiation">☢️ Radiation</option>
+                <option value="technology">🔧 Technology</option>
+              </select>
+            </div>
+
+            {/* Stats */}
+            <div className="bg-slate-800/50 backdrop-blur-lg rounded-2xl p-6 border border-slate-700">
+              <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
+                <span className="text-yellow-400">📊</span>
+                Research Stats
+              </h3>
+              <div className="space-y-3 text-slate-300">
+                <div className="flex justify-between">
+                  <span>Total Papers:</span>
+                  <span className="text-white font-semibold">{filteredPapers.length}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Domains:</span>
+                  <span className="text-white font-semibold">5</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Years:</span>
+                  <span className="text-white font-semibold">2023-2024</span>
+                </div>
               </div>
-              {selectedPaper.citation && (
-                <span className="text-gray-400 text-sm">
-                  {selectedPaper.citation}
-                </span>
+            </div>
+          </div>
+
+          {/* Main Galaxy Area */}
+          <div className="lg:col-span-3">
+            <div className="bg-slate-800/30 backdrop-blur-lg rounded-3xl p-8 border border-slate-700/50 min-h-[600px] relative">
+              {/* Galaxy Container */}
+              <div className="relative w-full h-full min-h-[500px]">
+                {filteredPapers.map((paper, index) => {
+                  const position = getStarPosition(index, filteredPapers.length);
+                  return (
+                    <button
+                      key={paper.id}
+                      onClick={() => setSelectedPaper(paper)}
+                      className={`absolute transform -translate-x-1/2 -translate-y-1/2 transition-all duration-500 hover:scale-125 ${
+                        selectedPaper?.id === paper.id ? 'scale-150 z-50' : 'z-30'
+                      }`}
+                      style={position}
+                    >
+                      {/* Star with glow effect */}
+                      <div className="relative">
+                        {/* Glow */}
+                        <div 
+                          className="absolute inset-0 rounded-full blur-md transition-all duration-300"
+                          style={{ backgroundColor: paper.color, opacity: selectedPaper?.id === paper.id ? 0.6 : 0.3 }}
+                        />
+                        {/* Main Star */}
+                        <div 
+                          className="w-8 h-8 rounded-full border-2 border-white/50 shadow-lg transition-all duration-300 flex items-center justify-center"
+                          style={{ backgroundColor: paper.color }}
+                        >
+                          <div className="w-2 h-2 bg-white rounded-full opacity-80"></div>
+                        </div>
+                        
+                        {/* Connection Lines */}
+                        {index < filteredPapers.length - 1 && (
+                          <div 
+                            className="absolute top-1/2 left-1/2 w-20 h-0.5 rounded-full opacity-30 -z-10"
+                            style={{ 
+                              backgroundColor: paper.color,
+                              transform: `rotate(${Math.atan2(
+                                parseFloat(getStarPosition(index + 1, filteredPapers.length).top) - parseFloat(position.top),
+                                parseFloat(getStarPosition(index + 1, filteredPapers.length).left) - parseFloat(position.left)
+                              )}rad)`,
+                              width: '80px'
+                            }}
+                          />
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+
+                {/* Center NASA Logo */}
+                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                  <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-2xl border-2 border-white/20">
+                    <span className="text-white font-bold text-sm text-center">NASA</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Instructions */}
+              {!selectedPaper && (
+                <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-center">
+                  <div className="bg-slate-800/80 backdrop-blur-lg text-white px-6 py-4 rounded-2xl border border-slate-600">
+                    <p className="text-lg font-semibold mb-1">✨ Click on Stars to Explore Research</p>
+                    <p className="text-sm text-slate-300">Each star represents a NASA space biology paper</p>
+                  </div>
+                </div>
               )}
             </div>
-            
-            <div className="pt-3 border-t border-gray-700">
-              <button className="w-full px-4 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg transition-all duration-200 font-semibold flex items-center justify-center gap-2">
-                📖 Explore Full Research Paper
-                <span className="text-sm opacity-80">→</span>
-              </button>
+          </div>
+        </div>
+
+        {/* Selected Paper Modal */}
+        {selectedPaper && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-lg flex items-center justify-center z-50 p-4">
+            <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-hidden border border-slate-600 shadow-2xl">
+              {/* Header */}
+              <div className="p-8 border-b border-slate-700 relative">
+                <div 
+                  className="absolute top-0 left-0 w-2 h-full"
+                  style={{ backgroundColor: selectedPaper.color }}
+                />
+                <div className="flex justify-between items-start gap-4">
+                  <div className="flex-1">
+                    <h2 className="text-2xl font-bold text-white mb-3 pr-8">
+                      {selectedPaper.title}
+                    </h2>
+                    <div className="flex flex-wrap gap-4 text-slate-300">
+                      <span className="flex items-center gap-1">
+                        📅 {selectedPaper.year}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        🔬 {selectedPaper.journal}
+                      </span>
+                      <span className="text-slate-400">
+                        {selectedPaper.citation}
+                      </span>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => setSelectedPaper(null)}
+                    className="text-slate-400 hover:text-white text-2xl font-bold transition-colors flex-shrink-0"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+
+              {/* Content */}
+              <div className="p-8 overflow-y-auto max-h-[60vh]">
+                <div className="space-y-6">
+                  {/* Authors */}
+                  <div>
+                    <h3 className="text-slate-400 text-sm font-semibold mb-2">AUTHORS</h3>
+                    <p className="text-white text-lg">{selectedPaper.authors}</p>
+                  </div>
+
+                  {/* Domain */}
+                  <div>
+                    <h3 className="text-slate-400 text-sm font-semibold mb-2">RESEARCH DOMAIN</h3>
+                    <div 
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-white font-semibold text-sm"
+                      style={{ backgroundColor: selectedPaper.color }}
+                    >
+                      <span>
+                        {selectedPaper.domain === 'plant_biology' && '🌱'}
+                        {selectedPaper.domain === 'human_biology' && '👨‍🚀'}
+                        {selectedPaper.domain === 'microbiology' && '🦠'}
+                        {selectedPaper.domain === 'radiation' && '☢️'}
+                        {selectedPaper.domain === 'technology' && '🔧'}
+                      </span>
+                      {selectedPaper.domain.replace('_', ' ').toUpperCase()}
+                    </div>
+                  </div>
+
+                  {/* Abstract */}
+                  <div>
+                    <h3 className="text-slate-400 text-sm font-semibold mb-2">ABSTRACT</h3>
+                    <p className="text-slate-200 leading-relaxed">
+                      {selectedPaper.abstract}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="p-8 border-t border-slate-700 bg-slate-800/50">
+                <div className="flex gap-4">
+                  <button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-4 px-6 rounded-xl font-semibold transition-all duration-200 flex items-center justify-center gap-3">
+                    📖 View Full Research Paper
+                    <span className="text-lg">→</span>
+                  </button>
+                  <button 
+                    onClick={() => setSelectedPaper(null)}
+                    className="px-8 bg-slate-700 hover:bg-slate-600 text-white py-4 rounded-xl font-semibold transition-colors"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      )}
-      
-      {/* Control Panel */}
-      <div className="absolute bottom-6 left-6 bg-gray-900/90 backdrop-blur-sm text-white p-5 rounded-xl border border-gray-700 min-w-80">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="text-2xl">🎯</div>
-          <div>
-            <h4 className="font-bold text-blue-400">Research Controls</h4>
-            <p className="text-sm text-gray-400">{filteredPapers.length} papers visible</p>
-          </div>
-        </div>
-        
-        <div className="space-y-3">
-          {/* Search */}
-          <div>
-            <input
-              type="text"
-              placeholder="🔍 Search papers..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 text-sm"
-            />
-          </div>
-          
-          {/* Domain Filter */}
-          <div>
-            <select 
-              value={filter}
-              onChange={(e) => setFilter(e.target.value)}
-              className="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500 text-sm"
-            >
-              <option value="all">🌐 All Research Domains</option>
-              <option value="plant_biology">🌱 Plant Biology</option>
-              <option value="human_biology">👨‍🚀 Human Biology</option>
-              <option value="microbiology">🦠 Microbiology</option>
-              <option value="radiation">☢️ Radiation</option>
-              <option value="technology">🔧 Technology</option>
-            </select>
-          </div>
-          
-          {/* Quick Actions */}
-          <div className="flex gap-2 pt-2">
-            <button 
-              onClick={() => setSelectedPaper(null)}
-              className="flex-1 px-3 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm transition-colors"
-            >
-              Clear Selection
-            </button>
-            <button className="flex-1 px-3 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm transition-colors">
-              Export View
-            </button>
-          </div>
-        </div>
+        )}
       </div>
-      
-      {/* Legend */}
-      <div className="absolute top-20 left-6 bg-gray-900/90 backdrop-blur-sm text-white p-4 rounded-xl border border-gray-700">
-        <h5 className="font-bold text-blue-400 mb-3 flex items-center gap-2">
-          <span>🗺️</span>
-          Research Domains
-        </h5>
-        <div className="space-y-2 text-sm">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-red-500"></div>
-            <span>Human Biology</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-green-500"></div>
-            <span>Plant Biology</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-            <span>Microbiology</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-purple-500"></div>
-            <span>Radiation</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-            <span>Technology</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Instructions */}
-      {!selectedPaper && (
-        <div className="absolute bottom-1/2 left-1/2 transform -translate-x-1/2 translate-y-32 text-center">
-          <div className="bg-gray-900/80 backdrop-blur-sm text-white px-6 py-4 rounded-xl border border-gray-600">
-            <p className="text-lg font-semibold mb-1">✨ Click on Stars to Explore Research</p>
-            <p className="text-sm text-gray-300">Each star represents a NASA space biology paper</p>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
