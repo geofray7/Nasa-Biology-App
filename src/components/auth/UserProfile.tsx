@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { useDocumentData } from 'react-firebase-hooks/firestore';
-import { auth, useFirestore } from '@/firebase';
+import { useAuth, useFirestore } from '@/firebase';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { updateProfile } from 'firebase/auth';
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 
 export function UserProfile() {
     const firestore = useFirestore();
+    const auth = useAuth();
     const [user, loadingAuth] = useAuthState(auth);
     const userDocRef = user ? doc(firestore, 'users', user.uid) : null;
     const [profileData, loadingProfile] = useDocumentData(userDocRef);
