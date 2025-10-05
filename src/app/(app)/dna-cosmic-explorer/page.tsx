@@ -1,19 +1,16 @@
-
 'use client';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-} from 'recharts';
+  collection,
+  query,
+  where,
+  getDocs,
+  addDoc,
+  serverTimestamp,
+} from 'firebase/firestore';
+import { useFirestore, useUser } from '@/firebase';
+import { useMemoFirebase } from '@/firebase/provider';
+
 import {
   Card,
   CardContent,
@@ -26,343 +23,410 @@ import { Textarea } from '@/components/ui/textarea';
 import {
   Dna,
   Search,
-  Download,
-  BarChart,
-  Info,
-  ChevronRight,
+  FlaskConical,
   AlertTriangle,
   HeartPulse,
   Code,
-  FlaskConical,
-   Languages,
-  Loader
+  Languages,
+  Loader,
+  Info,
 } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { useToast } from '@/hooks/use-toast';
 
-const DNAExplorer = () => {
-  const [dnaSequence, setDnaSequence] = useState('');
-  const [baseCount, setBaseCount] = useState(0);
-  const [geneCount, setGeneCount] = useState(0);
-  const [mutationCount, setMutationCount] = useState(0);
-  const [riskCount, setRiskCount] = useState(0);
-  const [baseDistribution, setBaseDistribution] = useState([]);
-  const [geneTypes, setGeneTypes] = useState([]);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [searchText, setSearchText] = useState('');
+// --- Helper Types ---
+interface Gene {
+  id: string;
+  symbol: string;
+  name: string;
+  function: string;
+  space_effects: {
+    radiation_sensitivity: string;
+    impact: string;
+    recommendation: string;
+  };
+}
+
+interface AnalysisResult {
+  sequence_length: number;
+  gc_content: string;
+  base_counts: { [key: string]: number };
+  analysis_date: Date;
+  space_predictions: {
+    radiation_risk: string;
+    predicted_mutation_rate: string;
+    microgravity_impact: string;
+    protection_recommendations: string[];
+  };
+}
+
+// --- Main Component ---
+const DNAExplorerPage = () => {
+  const { toast } = useToast();
+  const firestore = useFirestore();
+  const { user } = useUser();
+
+  // --- State Management ---
+  const [dnaSequence, setDnaSequence] = useState(
+    'ATGGATTTATCTGCTCTTCGCGTTGAAGAAGTACAAAATGTCATTAATGCTATGCAGAAAATCTTAGAGTGTCCAATATGTCTGGAGTTGATCAAGGAACCTGTCTCCACAAAGTGTGACCACATATTTTGCAAATTTTGCATGCTGAAACTTCTCAACCAGAAGAAAGGGCCTTCACAATGTCTTT'
+  );
   const [highlightedIndices, setHighlightedIndices] = useState<number[]>([]);
+  const [searchText, setSearchText] = useState('');
+
   const [geneSearchTerm, setGeneSearchTerm] = useState('');
-  const [geneResults, setGeneResults] = useState<any[]>([]);
-  const [translateInput, setTranslateInput] = useState('');
+  const [geneResults, setGeneResults] = useState<Gene[]>([]);
+  const [isGeneSearching, setIsGeneSearching] = useState(false);
+
+  const [translateInput, setTranslateInput] = useState('ATGGTGCACCTGACTCCTGAGGAGAAGTCTGCCGTTACTGCCCTGTGGGGCAAGGTGAACGTGGATGAAGTTGGTGGTGAGGCCCTGGGCAGGCTGCTGGTGGTCTACCCTTGGACCCAGAGGTTCTTTGAGTCCTTTGGGGATCTGTCCACTCCTGATGCTGTTATGGGCAACCCTAAGGTGAAGGCTCATGGCAAGAAAGTGCTCGGTGCCTTTAGTGATGGCCTGGCTCACCTGGACAACCTCAAGGGCACCTTTGCCACACTGAGTGAGCTGCACTGTGACAAGCTGCACGTGGATCCTGAGAACTTCAGGGTGAGTCTATGGGACGCTTGATGGG');
   const [proteinResult, setProteinResult] = useState('');
-  const [chartMode, setChartMode] = useState('dna');
+  
+  const [analysisSequence, setAnalysisSequence] = useState(dnaSequence);
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  const dnaSequences = [
-    "ATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCGATCG",
-    "GCTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGCTAGCTA",
-    "TTAGCTTAGCTTAGCTTAGCTTAGCTTAGCTTAGCTTAGCTTAGCTTAGCTTAGCTTAGCTTAGCTTAGCTTAGCTTAGC",
-    "CGAATCGATCGAATCGATCGAATCGATCGAATCGATCGAATCGATCGAATCGATCGAATCGATCGAATCGATCGAATCGA"
-  ];
-  const genes = [
-      { name: "BRCA1", description: "Breast cancer type 1 susceptibility protein" },
-      { name: "TP53", description: "Cellular tumor antigen p53" },
-      { name: "CFTR", description: "Cystic fibrosis transmembrane conductance regulator" },
-      { name: "HBB", description: "Hemoglobin subunit beta" },
-      { name: "APOE", description: "Apolipoprotein E" },
-      { name: "FTO", description: "Fat mass and obesity-associated protein" },
-      { name: "MTHFR", description: "Methylenetetrahydrofolate reductase" }
-  ];
-  
-  const generateDNASequence = () => {
-    const randomSequence = dnaSequences[Math.floor(Math.random() * dnaSequences.length)];
-    setDnaSequence(randomSequence);
-    updateStats(randomSequence);
-    setSearchText('');
-    setHighlightedIndices([]);
-    analyzeSequence(randomSequence);
-  };
-  
-  const updateStats = (sequence: string) => {
-    setBaseCount(sequence.length);
-    setGeneCount(Math.floor(Math.random() * 15) + 5);
-    setMutationCount(Math.floor(Math.random() * 10) + 1);
-    setRiskCount(Math.floor(Math.random() * 5));
-  };
-  
-  const analyzeSequence = (sequence: string) => {
+  // --- Client-Side "Cloud Function" Logic ---
+
+  // Equivalent to `analyzeDNA` Cloud Function
+  const handleAnalyzeSequence = async () => {
+    if (!analysisSequence) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Please enter a DNA sequence to analyze.' });
+      return;
+    }
+    if (!user) {
+      toast({ variant: 'destructive', title: 'Authentication Required', description: 'You must be signed in to save an analysis.' });
+      return;
+    }
+
+    const validChars = /^[ATCGatcg]+$/;
+    if (!validChars.test(analysisSequence)) {
+      toast({ variant: 'destructive', title: 'Invalid Sequence', description: 'DNA sequence can only contain A, T, C, and G.' });
+      return;
+    }
+
     setIsAnalyzing(true);
-    setTimeout(() => {
-        updateChartData(sequence, chartMode);
-        setIsAnalyzing(false);
-    }, 1500)
+    try {
+      // Perform analysis
+      const upperSeq = analysisSequence.toUpperCase();
+      const analysis: Omit<AnalysisResult, 'space_predictions'> = {
+        sequence_length: upperSeq.length,
+        gc_content: ((upperSeq.match(/[GC]/g) || []).length / upperSeq.length * 100).toFixed(1),
+        base_counts: {
+          A: (upperSeq.match(/A/g) || []).length,
+          T: (upperSeq.match(/T/g) || []).length,
+          C: (upperSeq.match(/C/g) || []).length,
+          G: (upperSeq.match(/G/g) || []).length,
+        },
+        analysis_date: new Date(),
+      };
+
+      // Predict space impacts
+      const space_predictions = predictSpaceImpact(analysis);
+      const fullAnalysis: AnalysisResult = { ...analysis, space_predictions };
+      setAnalysisResult(fullAnalysis);
+
+      // Save to user's analyses in Firestore
+      const analysesCollection = collection(firestore, 'users', user.uid, 'dna_analyses');
+      await addDoc(analysesCollection, {
+        userId: user.uid,
+        originalSequence: upperSeq,
+        sequenceLength: fullAnalysis.sequence_length,
+        gcContent: Number(fullAnalysis.gc_content),
+        analysisDate: serverTimestamp(),
+        results: JSON.stringify({ // Store complex object as a string
+          ...fullAnalysis,
+          analysis_date: fullAnalysis.analysis_date.toISOString(),
+        }),
+        spacePredictions: JSON.stringify(fullAnalysis.space_predictions)
+      });
+      
+      toast({ title: 'Analysis Complete', description: 'DNA analysis has been successfully saved to your profile.' });
+    } catch (error: any) {
+      console.error("Error analyzing DNA:", error);
+      toast({ variant: 'destructive', title: 'Analysis Failed', description: error.message || 'An unknown error occurred.' });
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+  
+  // Equivalent to `searchGene` Cloud Function
+  const handleGeneSearch = async () => {
+    if (!geneSearchTerm) {
+      setGeneResults([]);
+      return;
+    }
+    setIsGeneSearching(true);
+    try {
+      const genesRef = collection(firestore, 'genes');
+      const q = query(genesRef, where('symbol', '==', geneSearchTerm.toUpperCase()));
+      const querySnapshot = await getDocs(q);
+      
+      let results: Gene[] = [];
+      querySnapshot.forEach((doc) => {
+        results.push({ id: doc.id, ...doc.data() } as Gene);
+      });
+      
+      if (results.length === 0) {
+        toast({ variant: 'destructive', title: 'Not Found', description: `Gene "${geneSearchTerm}" not in database. Please add it via the Firebase console.` });
+      }
+
+      setGeneResults(results);
+    } catch (error: any) {
+       console.error("Error searching gene:", error);
+       toast({ variant: 'destructive', title: 'Search Failed', description: 'Could not connect to the gene database.' });
+    } finally {
+      setIsGeneSearching(false);
+    }
+  };
+  
+  // Equivalent to `predictSpaceImpact` internal function
+  const predictSpaceImpact = (analysis: Pick<AnalysisResult, 'gc_content' | 'sequence_length'>) => {
+    const gcContent = parseFloat(analysis.gc_content);
+    
+    let radiationRisk = "Low";
+    if (gcContent > 60) radiationRisk = "High";
+    else if (gcContent > 45) radiationRisk = "Medium";
+    
+    let mutationRate = "Normal";
+    if (analysis.sequence_length > 10000) mutationRate = "25% increase expected";
+    else if (analysis.sequence_length > 5000) mutationRate = "15% increase expected";
+    
+    return {
+      radiation_risk: radiationRisk,
+      predicted_mutation_rate: mutationRate,
+      microgravity_impact: "Gene expression alterations likely",
+      protection_recommendations: [
+        "Regular DNA damage assessment",
+        radiationRisk === "High" ? "Enhanced radiation shielding" : "Standard protection",
+        "Antioxidant supplementation"
+      ]
+    };
   };
 
-  const updateChartData = (sequence:string, mode: string) => {
-    const counts: { [key: string]: number } = { A: 0, T: 0, C: 0, G: 0, U: 0 };
-    for (const base of sequence) {
-        if(counts[base] !== undefined) counts[base]++;
-    }
-
-    if (mode === 'dna') {
-        setBaseDistribution([
-            { name: 'Adenine', value: counts.A, color: '#ef4444' },
-            { name: 'Thymine', value: counts.T, color: '#22c55e' },
-            { name: 'Cytosine', value: counts.C, color: '#3b82f6' },
-            { name: 'Guanine', value: counts.G, color: '#f59e0b' },
-        ]);
-    } else { // RNA
-        setBaseDistribution([
-            { name: 'Adenine', value: counts.A, color: '#ef4444' },
-            { name: 'Uracil', value: counts.T, color: '#8b5cf6' }, // Assuming T -> U
-            { name: 'Cytosine', value: counts.C, color: '#3b82f6' },
-            { name: 'Guanine', value: counts.G, color: '#f59e0b' },
-        ]);
-    }
-
-    setGeneTypes([
-        { name: 'Protein Coding', value: 60, color: '#3b82f6' },
-        { name: 'RNA Genes', value: 20, color: '#a855f7' },
-        { name: 'Pseudogenes', value: 10, color: '#ef4444' },
-        { name: 'Regulatory', value: 10, color: '#f59e0b' },
-    ]);
-  }
+  // --- Frontend Logic ---
 
   const handleSequenceSearch = () => {
     if (!searchText) {
-        setHighlightedIndices([]);
-        return;
+      setHighlightedIndices([]);
+      return;
     }
+    const upperSeq = dnaSequence.toUpperCase();
+    const upperSearch = searchText.toUpperCase();
     const indices: number[] = [];
     let startIndex = 0;
-    while((startIndex = dnaSequence.indexOf(searchText.toUpperCase(), startIndex)) > -1) {
-        for(let i=0; i < searchText.length; i++) {
-            indices.push(startIndex + i);
-        }
-        startIndex += 1;
+    while ((startIndex = upperSeq.indexOf(upperSearch, startIndex)) > -1) {
+      for (let i = 0; i < searchText.length; i++) {
+        indices.push(startIndex + i);
+      }
+      startIndex += 1;
     }
     setHighlightedIndices(indices);
-  };
-  
-  const handleGeneSearch = () => {
-    if (!geneSearchTerm) {
-        setGeneResults([]);
-        return;
+    if (indices.length === 0) {
+        toast({ title: 'Not Found', description: 'Sequence not found in the viewer.' });
     }
-    const results = genes.filter(gene =>
-        gene.name.toLowerCase().includes(geneSearchTerm.toLowerCase()) ||
-        gene.description.toLowerCase().includes(geneSearchTerm.toLowerCase())
-    );
-    setGeneResults(results);
   };
-  
+
   const handleTranslate = () => {
     const codonTable: { [key: string]: string } = {
-        'ATG': 'M', 'TAA': '*', 'TAG': '*', 'TGA': '*', 'GCT': 'A', 'GCC': 'A', 'GCA': 'A', 'GCG': 'A',
-        'CGT': 'R', 'CGC': 'R', 'CGA': 'R', 'CGG': 'R', 'AGA': 'R', 'AGG': 'R', 'AAT': 'N', 'AAC': 'N',
-        'GAT': 'D', 'GAC': 'D', 'TGT': 'C', 'TGC': 'C', 'CAA': 'Q', 'CAG': 'Q', 'GAA': 'E', 'GAG': 'E',
-        'GGT': 'G', 'GGC': 'G', 'GGA': 'G', 'GGG': 'G', 'CAT': 'H', 'CAC': 'H', 'ATT': 'I', 'ATC': 'I', 'ATA': 'I',
-        'TTA': 'L', 'TTG': 'L', 'CTT': 'L', 'CTC': 'L', 'CTA': 'L', 'CTG': 'L', 'AAA': 'K', 'AAG': 'K',
-        'TTT': 'F', 'TTC': 'F', 'CCT': 'P', 'CCC': 'P', 'CCA': 'P', 'CCG': 'P', 'TCT': 'S', 'TCC': 'S', 'TCA': 'S', 'TCG': 'S', 'AGT': 'S', 'AGC': 'S',
-        'ACT': 'T', 'ACC': 'T', 'ACA': 'T', 'ACG': 'T', 'TGG': 'W', 'TAT': 'Y', 'TAC': 'Y', 'GTT': 'V', 'GTC': 'V', 'GTA': 'V', 'GTG': 'V'
+      'ATG': 'M', 'TAA': '*', 'TAG': '*', 'TGA': '*', 'GCT': 'A', 'GCC': 'A', 'GCA': 'A', 'GCG': 'A',
+      'CGT': 'R', 'CGC': 'R', 'CGA': 'R', 'CGG': 'R', 'AGA': 'R', 'AGG': 'R', 'AAT': 'N', 'AAC': 'N',
+      'GAT': 'D', 'GAC': 'D', 'TGT': 'C', 'TGC': 'C', 'CAA': 'Q', 'CAG': 'Q', 'GAA': 'E', 'GAG': 'E',
+      'GGT': 'G', 'GGC': 'G', 'GGA': 'G', 'GGG': 'G', 'CAT': 'H', 'CAC': 'H', 'ATT': 'I', 'ATC': 'I', 'ATA': 'I',
+      'TTA': 'L', 'TTG': 'L', 'CTT': 'L', 'CTC': 'L', 'CTA': 'L', 'CTG': 'L', 'AAA': 'K', 'AAG': 'K',
+      'TTT': 'F', 'TTC': 'F', 'CCT': 'P', 'CCC': 'P', 'CCA': 'P', 'CCG': 'P', 'TCT': 'S', 'TCC': 'S', 'TCA': 'S', 'TCG': 'S', 'AGT': 'S', 'AGC': 'S',
+      'ACT': 'T', 'ACC': 'T', 'ACA': 'T', 'ACG': 'T', 'TGG': 'W', 'TAT': 'Y', 'TAC': 'Y', 'GTT': 'V', 'GTC': 'V', 'GTA': 'V', 'GTG': 'V'
     };
-    
     let protein = '';
-    const dna = translateInput.toUpperCase();
+    const dna = translateInput.toUpperCase().replace(/[^ATCG]/g, '');
     for (let i = 0; i < dna.length - 2; i += 3) {
-        const codon = dna.substring(i, i + 3);
-        protein += codonTable[codon] || '?';
+      const codon = dna.substring(i, i + 3);
+      protein += codonTable[codon] || '?';
     }
-    setProteinResult(protein || "No valid codons found");
+    setProteinResult(protein || "No valid codons found.");
+    toast({ title: 'Translation Complete', description: 'DNA translated to protein sequence.' });
   };
-
-  useEffect(() => {
-    generateDNASequence();
-  }, []);
   
-  useEffect(() => {
-    if(dnaSequence) {
-        updateChartData(dnaSequence, chartMode);
-    }
-  }, [chartMode]);
-
   const getBaseColor = (base: string) => {
     const colors: { [key: string]: string } = { 'A': 'text-red-400', 'T': 'text-green-400', 'C': 'text-blue-400', 'G': 'text-yellow-400' };
-    return colors[base] || 'text-gray-400';
+    return colors[base.toUpperCase()] || 'text-gray-400';
   }
 
+  // --- Render ---
   return (
     <div className="w-full max-w-7xl mx-auto space-y-6">
       <div className="text-center">
-        <h1 className="text-3xl font-headline font-bold mb-2 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">DNA Cosmic Explorer</h1>
-        <p className="text-muted-foreground">Advanced analysis of space-induced genetic changes</p>
+        <h1 className="text-3xl font-headline font-bold mb-2 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+          DNA Cosmic Explorer
+        </h1>
+        <p className="text-muted-foreground">
+          Advanced analysis of space-induced genetic changes
+        </p>
       </div>
 
+      {/* DNA Sequence Viewer */}
       <Card>
         <CardHeader>
-          <div className="flex justify-between items-center">
-            <CardTitle>DNA Sequence Viewer</CardTitle>
-            <div className="flex gap-2">
-              <Button onClick={generateDNASequence}><Dna className="mr-2" /> Load New Sequence</Button>
-              <Button variant="outline"><Download className="mr-2" /> Export</Button>
-              <Button variant="outline" onClick={() => analyzeSequence(dnaSequence)} disabled={isAnalyzing}>
-                {isAnalyzing ? <Loader className="animate-spin mr-2"/> : <BarChart className="mr-2" />}
-                {isAnalyzing ? "Analyzing..." : "Analyze"}
-              </Button>
-            </div>
-          </div>
+          <CardTitle>DNA Sequence Viewer</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="bg-muted/50 rounded-lg p-4 font-mono text-lg leading-loose break-all max-h-48 overflow-y-auto mb-4">
+          <ScrollArea className="bg-muted/50 rounded-lg p-4 font-mono text-lg leading-loose break-all h-48 mb-4">
             {dnaSequence.split('').map((base, index) => (
-              <span key={index} className={`inline-block w-6 text-center rounded-md transition-all duration-200 ${getBaseColor(base)} ${highlightedIndices.includes(index) ? 'bg-yellow-400/30 scale-125' : ''}`}>
+              <span
+                key={index}
+                className={`inline-block w-6 text-center rounded-sm transition-colors duration-200 ${getBaseColor(base)} ${
+                  highlightedIndices.includes(index) ? 'bg-yellow-400/30' : ''
+                }`}
+              >
                 {base}
               </span>
             ))}
-          </div>
+          </ScrollArea>
           <div className="flex gap-2">
-            <Input 
-              placeholder="Search sequence (e.g. ATCG)" 
-              value={searchText} 
+            <Input
+              placeholder="Search sequence (e.g. ATCG)"
+              value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSequenceSearch()}
             />
-            <Button onClick={handleSequenceSearch}><Search className="mr-2" /> Search</Button>
+            <Button onClick={handleSequenceSearch}>
+              <Search className="mr-2" /> Search
+            </Button>
           </div>
         </CardContent>
       </Card>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard icon={Code} title="Base Pairs" value={baseCount.toLocaleString()} color="primary" />
-        <StatCard icon={Dna} title="Genes Identified" value={geneCount} color="purple" />
-        <StatCard icon={AlertTriangle} title="Variants Detected" value={mutationCount} color="red" />
-        <StatCard icon={HeartPulse} title="Health Risks" value={riskCount} color="green" />
-      </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Gene Finder */}
+        <Card>
           <CardHeader>
-            <div className="flex justify-between items-center">
-                <CardTitle>Base Pair Distribution</CardTitle>
-                <div className="flex gap-2">
-                    <Button variant={chartMode === 'dna' ? 'default' : 'outline'} onClick={() => setChartMode('dna')}>DNA</Button>
-                    <Button variant={chartMode === 'rna' ? 'default' : 'outline'} onClick={() => setChartMode('rna')}>RNA</Button>
-                </div>
+            <div className="flex items-center gap-3">
+              <Search className="text-primary" />
+              <CardTitle>Gene Finder</CardTitle>
             </div>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={baseDistribution}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" />
-                <YAxis stroke="hsl(var(--muted-foreground))" />
-                <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}/>
-                <Line type="monotone" dataKey="value" stroke="hsl(var(--primary))" fill="hsl(var(--primary) / 0.1)" strokeWidth={2}/>
-              </LineChart>
-            </ResponsiveContainer>
+            <div className="flex gap-2 mb-4">
+              <Input
+                placeholder="Enter gene symbol (e.g. BRCA1)"
+                value={geneSearchTerm}
+                onChange={(e) => setGeneSearchTerm(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleGeneSearch()}
+              />
+              <Button onClick={handleGeneSearch} disabled={isGeneSearching}>
+                {isGeneSearching ? <Loader className="animate-spin" /> : <Search />}
+              </Button>
+            </div>
+            <ScrollArea className="h-64 space-y-2">
+              {geneResults.length > 0 ? (
+                geneResults.map((gene) => (
+                  <div key={gene.id} className="p-3 bg-muted/50 rounded-md mb-2">
+                    <p className="font-bold text-lg text-primary">{gene.symbol}</p>
+                    <p className="text-sm font-semibold">{gene.name}</p>
+                    <p className="text-sm text-muted-foreground mt-1">{gene.function}</p>
+                    <div className="mt-2 p-2 bg-background rounded-md border border-border">
+                        <p className="text-xs font-bold text-accent">Space Impact:</p>
+                        <p className="text-xs text-muted-foreground">{gene.space_effects.impact}</p>
+                        <p className="text-xs text-muted-foreground mt-1"><span className="font-semibold">Recommendation:</span> {gene.space_effects.recommendation}</p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center text-muted-foreground pt-10">
+                  <p>Search for a gene to see its details and space-related effects.</p>
+                  <p className="text-xs mt-2">(e.g., TP53, SOD2, TERT)</p>
+                </div>
+              )}
+            </ScrollArea>
           </CardContent>
         </Card>
 
+        {/* Sequence Translation */}
         <Card>
-            <CardHeader>
-                <CardTitle>Gene Types</CardTitle>
-            </CardHeader>
-            <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                    <Pie data={geneTypes} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label>
-                        {geneTypes.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                    </Pie>
-                    <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}/>
-                    <Legend />
-                </PieChart>
-                </ResponsiveContainer>
-            </CardContent>
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <Languages className="text-green-500" />
+              <CardTitle>DNA to Protein Translation</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <Textarea
+              placeholder="Enter DNA sequence to translate..."
+              rows={4}
+              value={translateInput}
+              onChange={(e) => setTranslateInput(e.target.value)}
+              className="font-mono"
+            />
+            <Button className="mt-2" onClick={handleTranslate}>
+              Translate to Protein
+            </Button>
+            <div className="mt-4">
+              <label className="text-sm font-medium">Resulting Protein Sequence</label>
+              <Textarea
+                readOnly
+                rows={3}
+                value={proteinResult}
+                placeholder="Protein sequence will appear here"
+                className="font-mono mt-1 text-accent"
+              />
+            </div>
+          </CardContent>
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
+      {/* DNA Analysis */}
+       <Card>
             <CardHeader>
                 <div className="flex items-center gap-3">
-                    <Search className="text-primary"/>
-                    <CardTitle>Gene Finder</CardTitle>
-                </div>
-            </CardHeader>
-            <CardContent>
-                <div className="flex gap-2">
-                    <Input 
-                        placeholder="Enter gene name or ID (e.g. BRCA1)"
-                        value={geneSearchTerm}
-                        onChange={(e) => setGeneSearchTerm(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleGeneSearch()}
-                    />
-                    <Button onClick={handleGeneSearch}>Find Gene</Button>
-                </div>
-                <div className="mt-4 space-y-2 max-h-48 overflow-y-auto">
-                    {geneResults.length > 0 ? geneResults.map(gene => (
-                        <div key={gene.name} className="p-3 bg-muted/50 rounded-md">
-                            <p className="font-semibold">{gene.name}</p>
-                            <p className="text-sm text-muted-foreground">{gene.description}</p>
-                        </div>
-                    )) : geneSearchTerm && <p className="text-muted-foreground text-sm p-3">No genes found.</p>}
-                </div>
-            </CardContent>
-        </Card>
-
-        <Card>
-            <CardHeader>
-                <div className="flex items-center gap-3">
-                    <Languages className="text-green-500"/>
-                    <CardTitle>Sequence Translation</CardTitle>
+                    <FlaskConical className="text-purple-400"/>
+                    <CardTitle>Analyze New DNA Sequence</CardTitle>
                 </div>
             </CardHeader>
             <CardContent>
                 <Textarea 
-                    placeholder="Enter DNA sequence to translate (e.g. ATGCCGTA)" 
-                    rows={3}
-                    value={translateInput}
-                    onChange={(e) => setTranslateInput(e.target.value)}
+                    placeholder="Paste a raw DNA sequence here for analysis and space impact prediction..." 
+                    rows={5}
+                    value={analysisSequence}
+                    onChange={(e) => setAnalysisSequence(e.target.value)}
+                    className="font-mono mb-2"
                 />
-                <Button className="mt-2" onClick={handleTranslate}>Translate to Protein</Button>
-                <div className="mt-4">
-                    <label className="text-sm font-medium">Protein Sequence</label>
-                    <Textarea 
-                        readOnly
-                        rows={2}
-                        value={proteinResult}
-                        placeholder="Protein sequence appears here"
-                    />
-                </div>
+                <Button onClick={handleAnalyzeSequence} disabled={isAnalyzing || !user}>
+                    {isAnalyzing ? <Loader className="animate-spin mr-2"/> : <FlaskConical className="mr-2"/>}
+                    {isAnalyzing ? "Analyzing..." : (user ? "Analyze and Save" : "Login to Analyze")}
+                </Button>
+                
+                {analysisResult && (
+                    <div className="mt-4 space-y-4 p-4 border rounded-lg bg-muted/30">
+                        <h3 className="font-bold text-lg">Analysis Complete</h3>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <Stat title="Seq. Length" value={analysisResult.sequence_length.toLocaleString()} />
+                            <Stat title="GC Content" value={`${analysisResult.gc_content}%`} />
+                            {Object.entries(analysisResult.base_counts).map(([base, count])=> (
+                                <Stat key={base} title={`Base '${base}'`} value={count.toLocaleString()} />
+                            ))}
+                        </div>
+                        <div className="p-3 bg-background rounded-md border">
+                            <h4 className="font-semibold text-primary mb-2">Space Mission Predictions</h4>
+                            <p className="text-sm"><strong className="text-muted-foreground">Radiation Risk: </strong>{analysisResult.space_predictions.radiation_risk}</p>
+                            <p className="text-sm"><strong className="text-muted-foreground">Predicted Mutation Rate: </strong>{analysisResult.space_predictions.predicted_mutation_rate}</p>
+                             <div className="mt-2">
+                                <strong className="text-muted-foreground text-sm">Recommendations:</strong>
+                                <ul className="list-disc list-inside text-sm mt-1">
+                                    {analysisResult.space_predictions.protection_recommendations.map((rec, i) => <li key={i}>{rec}</li>)}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </CardContent>
         </Card>
-      </div>
-
     </div>
   );
 };
 
-const StatCard = ({ icon: Icon, title, value, color }: { icon: React.ElementType; title: string; value: string | number; color: string; }) => {
-    const colors: { [key: string]: string } = {
-        primary: 'text-primary bg-primary/10',
-        purple: 'text-purple-400 bg-purple-400/10',
-        red: 'text-red-400 bg-red-400/10',
-        green: 'text-green-400 bg-green-400/10',
-    }
-    return (
-        <Card className="hover:translate-y-[-5px] transition-transform duration-300">
-            <CardContent className="p-4 flex items-center gap-4">
-                <div className={`p-3 rounded-lg ${colors[color]}`}>
-                    <Icon className="size-8" />
-                </div>
-                <div>
-                    <p className="text-sm text-muted-foreground">{title}</p>
-                    <p className="text-2xl font-bold">{value}</p>
-                </div>
-            </CardContent>
-        </Card>
-    );
-};
+const Stat = ({title, value}: {title:string, value: string|number}) => (
+    <div className="bg-background p-2 rounded-md text-center border">
+        <p className="text-xl font-bold text-accent">{value}</p>
+        <p className="text-xs text-muted-foreground">{title}</p>
+    </div>
+);
 
-export default DNAExplorer;
-
-    
+export default DNAExplorerPage;

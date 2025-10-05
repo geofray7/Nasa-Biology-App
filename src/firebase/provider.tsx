@@ -156,10 +156,15 @@ export const useFirebaseApp = (): FirebaseApp => {
 
 type MemoFirebase <T> = T & {__memo?: boolean};
 
-export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T | (MemoFirebase<T>) {
+export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T {
   const memoized = useMemo(factory, deps);
   
-  if(typeof memoized !== 'object' || memoized === null) return memoized;
+  if (typeof memoized !== 'object' || memoized === null) {
+    return memoized;
+  }
+  
+  // This is a hack to check if the object was memoized.
+  // It's not a great solution, but it's the best we can do for now.
   (memoized as MemoFirebase<T>).__memo = true;
   
   return memoized;

@@ -6,10 +6,6 @@
       "type": "object",
       "description": "Represents a gene with its properties, space effects, health risks, and variants.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the gene entity."
-        },
         "symbol": {
           "type": "string",
           "description": "The symbol of the gene (e.g., BRCA1)."
@@ -46,30 +42,42 @@
           "type": "string",
           "description": "The biotype of the gene (e.g., protein_coding)."
         },
-        "healthRisks": {
+        "health_risks": {
           "type": "array",
           "description": "List of health risks associated with the gene.",
           "items": {
             "type": "string"
           }
         },
-        "spaceEffects": {
-          "type": "string",
-          "description": "Space related effects of the gene."
+        "space_effects": {
+          "type": "object",
+          "description": "Space related effects of the gene.",
+           "properties": {
+            "radiation_sensitivity": {"type": "string"},
+            "microgravity_impact": {"type": "string"},
+            "cosmic_ray_risk": {"type": "string"},
+            "protection": {"type": "string"},
+            "impact": {"type": "string"},
+            "recommendation": {"type": "string"}
+          }
         },
         "variants": {
           "type": "array",
           "description": "List of variants of the gene.",
           "items": {
-            "type": "string"
+            "type": "object",
+            "properties": {
+                "id": {"type": "string"},
+                "mutation": {"type": "string"},
+                "significance": {"type": "string"},
+                "frequency": {"type": "string"}
+            }
           }
         }
       },
       "required": [
-        "id",
         "symbol",
         "name",
-        "sequence",
         "function"
       ]
     },
@@ -79,13 +87,9 @@
       "type": "object",
       "description": "Represents a DNA analysis performed on a sequence.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the DNA analysis entity."
-        },
         "userId": {
           "type": "string",
-          "description": "Reference to User. (Relationship: User 1:N DnaAnalysis) The ID of the user who performed the analysis."
+          "description": "The ID of the user who performed the analysis."
         },
         "originalSequence": {
           "type": "string",
@@ -114,11 +118,8 @@
         }
       },
       "required": [
-        "id",
         "userId",
         "originalSequence",
-        "sequenceLength",
-        "gcContent",
         "analysisDate"
       ]
     },
@@ -128,10 +129,6 @@
       "type": "object",
       "description": "Represents a space research study.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the space research study."
-        },
         "title": {
           "type": "string",
           "description": "The title of the space research study."
@@ -157,7 +154,6 @@
         }
       },
       "required": [
-        "id",
         "title",
         "findings",
         "implications",
@@ -167,7 +163,6 @@
   },
   "auth": {
     "providers": [
-      "password",
       "anonymous"
     ]
   },
@@ -176,56 +171,30 @@
       {
         "path": "/genes/{geneId}",
         "definition": {
-          "entityName": "Gene",
           "schema": {
-            "$ref": "#/backend/entities/Gene"
+            "$ref": "#/entities/Gene"
           },
-          "description": "Stores gene data. Readable by all authenticated users. Writable by admins only.",
-          "params": [
-            {
-              "name": "geneId",
-              "description": "The unique identifier for the gene."
-            }
-          ]
+          "description": "Stores gene data. Readable by all authenticated users. Writable by admins only."
         }
       },
       {
         "path": "/users/{userId}/dna_analyses/{analysisId}",
         "definition": {
-          "entityName": "DnaAnalysis",
           "schema": {
-            "$ref": "#/backend/entities/DnaAnalysis"
+            "$ref": "#/entities/DnaAnalysis"
           },
-          "description": "Stores DNA analysis data for each user. Users can only read/write their own analysis data.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier for the user."
-            },
-            {
-              "name": "analysisId",
-              "description": "The unique identifier for the DNA analysis."
-            }
-          ]
+          "description": "Stores DNA analysis data for each user. Users can only read/write their own analysis data."
         }
       },
       {
         "path": "/space_research/{studyId}",
         "definition": {
-          "entityName": "SpaceResearch",
           "schema": {
-            "$ref": "#/backend/entities/SpaceResearch"
+            "$ref": "#/entities/SpaceResearch"
           },
-          "description": "Stores space research data. Readable by all authenticated users. Writable by admins only.",
-          "params": [
-            {
-              "name": "studyId",
-              "description": "The unique identifier for the space research study."
-            }
-          ]
+          "description": "Stores space research data. Readable by all authenticated users. Writable by admins only."
         }
       }
-    ],
-    "reasoning": "The Firestore data structure is designed to support a space biology knowledge engine, prioritizing authorization independence, clarity, and scalability. It incorporates denormalization to avoid chained `get()` calls in security rules, ensuring atomic operations and simplifying debugging. Structural segregation ensures that collections contain data with homogenous security needs, facilitating simpler rules and more secure `list` operations.  The design employs consistent access modeling for private and collaborative data.\n\nGenes are stored in a top-level `/genes` collection, readable by all authenticated users but writable only by admins (simulated by no write access for normal users). DNA analyses are stored in `/users/{userId}/dna_analyses/{analysisId}` to ensure that a user can only read or write their own analyses. Space research data is stored in the `/space_research` collection and is readable by all authenticated users, but only writable by admins (simulated by no write access for normal users).  This structure adheres to the principles outlined, including authorization independence by avoiding `get()` calls, clear separation of public and private data, and predictable schemas."
+    ]
   }
 }
