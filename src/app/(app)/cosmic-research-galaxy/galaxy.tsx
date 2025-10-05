@@ -1,163 +1,87 @@
-
 'use client';
 import React, { useRef, useState, useEffect } from 'react';
 
-interface PaperStar {
-  id: string;
-  title: string;
-  authors: string;
-  year: string;
-  domain: string;
-  color: string;
-}
-
 const ResearchGalaxy = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [selectedPaper, setSelectedPaper] = useState<PaperStar | null>(null);
+  const [selectedPaper, setSelectedPaper] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  // Sample papers data
-  const samplePapers: PaperStar[] = [
-    {
-      id: '1',
-      title: 'Effects of Microgravity on Plant Growth',
-      authors: 'NASA Plant Biology Team',
-      year: '2023',
-      domain: 'plant_biology',
-      color: '#22c55e'
-    },
-    {
-      id: '2', 
-      title: 'Space Radiation Impact on Human DNA',
-      authors: 'NASA Radiation Research Team',
-      year: '2024',
-      domain: 'radiation',
-      color: '#a855f7'
-    },
-    {
-      id: '3',
-      title: 'Microbial Adaptation in ISS Environment',
-      authors: 'NASA Microbiology Team', 
-      year: '2023',
-      domain: 'microbiology',
-      color: '#3b82f6'
-    },
-    {
-      id: '4',
-      title: 'Astronaut Cardiovascular Health in Space',
-      authors: 'NASA Medical Team',
-      year: '2024', 
-      domain: 'human_biology',
-      color: '#ef4444'
-    },
-    {
-      id: '5',
-      title: 'Advanced Biosensors for Space Biology',
-      authors: 'NASA Technology Team',
-      year: '2024',
-      domain: 'technology', 
-      color: '#eab308'
-    }
+  // Sample papers
+  const papers = [
+    { id: 1, title: "Plant Growth in Microgravity", domain: "plant", color: "#22c55e", x: 100, y: 100 },
+    { id: 2, title: "Space Radiation Effects", domain: "radiation", color: "#a855f7", x: 200, y: 150 },
+    { id: 3, title: "Microbial Space Adaptation", domain: "microbiology", color: "#3b82f6", x: 150, y: 250 },
+    { id: 4, title: "Astronaut Health Research", domain: "human", color: "#ef4444", x: 300, y: 200 },
+    { id: 5, title: "Space Biology Technology", domain: "technology", color: "#eab308", x: 250, y: 100 },
   ];
 
   useEffect(() => {
-    // Simple 2D canvas implementation that always works
+    
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas) {
+      return;
+    }
 
     const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    if (!ctx) {
+      return;
+    }
 
     // Set canvas size
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
-    // Create space background
-    const drawSpace = () => {
-      // Black background
+    // Draw everything immediately
+    const drawGalaxy = () => {
+      
+      // Clear with space background
       ctx.fillStyle = '#000011';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Stars
+      // Draw stars
       ctx.fillStyle = '#ffffff';
-      for (let i = 0; i < 200; i++) {
+      for (let i = 0; i < 100; i++) {
         const x = Math.random() * canvas.width;
         const y = Math.random() * canvas.height;
-        const size = Math.random() * 1.5;
+        const size = Math.random() * 2;
         ctx.beginPath();
         ctx.arc(x, y, size, 0, Math.PI * 2);
         ctx.fill();
       }
 
-      // Nebula effect
-      const gradient = ctx.createRadialGradient(
-        canvas.width / 2, canvas.height / 2, 0,
-        canvas.width / 2, canvas.height / 2, canvas.width / 2
-      );
-      gradient.addColorStop(0, 'rgba(30, 10, 60, 0.1)');
-      gradient.addColorStop(1, 'rgba(0, 0, 20, 0.8)');
-      ctx.fillStyle = gradient;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-    };
-
-    // Draw paper stars
-    const drawStars = () => {
-      const centerX = canvas.width / 2;
-      const centerY = canvas.height / 2;
-      const radius = Math.min(canvas.width, canvas.height) * 0.3;
-
-      samplePapers.forEach((paper, index) => {
-        const angle = (index / samplePapers.length) * Math.PI * 2;
-        const x = centerX + Math.cos(angle) * radius;
-        const y = centerY + Math.sin(angle) * radius;
-
-        // Star glow
-        const glow = ctx.createRadialGradient(x, y, 0, x, y, 20);
-        glow.addColorStop(0, paper.color);
-        glow.addColorStop(1, 'transparent');
-
-        ctx.fillStyle = glow;
+      // Draw paper stars
+      papers.forEach(paper => {
+        // Glow effect
+        const gradient = ctx.createRadialGradient(paper.x, paper.y, 0, paper.x, paper.y, 30);
+        gradient.addColorStop(0, paper.color);
+        gradient.addColorStop(1, 'transparent');
+        
+        ctx.fillStyle = gradient;
         ctx.beginPath();
-        ctx.arc(x, y, 20, 0, Math.PI * 2);
+        ctx.arc(paper.x, paper.y, 30, 0, Math.PI * 2);
         ctx.fill();
 
         // Star core
         ctx.fillStyle = paper.color;
         ctx.beginPath();
-        ctx.arc(x, y, 8, 0, Math.PI * 2);
+        ctx.arc(paper.x, paper.y, 12, 0, Math.PI * 2);
         ctx.fill();
 
-        // Constellation lines
-        if (index < samplePapers.length - 1) {
-          const nextAngle = ((index + 1) / samplePapers.length) * Math.PI * 2;
-          const nextX = centerX + Math.cos(nextAngle) * radius;
-          const nextY = centerY + Math.sin(nextAngle) * radius;
-
-          ctx.strokeStyle = 'rgba(100, 100, 255, 0.3)';
-          ctx.lineWidth = 1;
-          ctx.beginPath();
-          ctx.moveTo(x, y);
-          ctx.lineTo(nextX, nextY);
-          ctx.stroke();
-        }
+        // Add sparkle
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(paper.x - 5, paper.y - 5, 3, 0, Math.PI * 2);
+        ctx.fill();
       });
     };
 
-    let animationFrameId: number;
-    const animate = () => {
-      drawSpace();
-      drawStars();
-      
-      // Rotate slowly
-      if (canvasRef.current) {
-        // This kind of rotation is better handled inside the canvas draw loop for performance
-      }
-      
-      animationFrameId = requestAnimationFrame(animate);
-    };
-
-    animate();
-    setLoading(false);
+    // Draw immediately
+    drawGalaxy();
+    
+    // Set loading to false after a short delay to ensure everything is drawn
+    setTimeout(() => {
+      setLoading(false);
+    }, 500);
 
     // Click handler
     const handleClick = (event: MouseEvent) => {
@@ -165,18 +89,9 @@ const ResearchGalaxy = () => {
       const x = event.clientX - rect.left;
       const y = event.clientY - rect.top;
 
-      const centerX = canvas.width / 2;
-      const centerY = canvas.height / 2;
-      const radius = Math.min(canvas.width, canvas.height) * 0.3;
-
-      samplePapers.forEach((paper, index) => {
-        const angle = (index / samplePapers.length) * Math.PI * 2;
-        const starX = centerX + Math.cos(angle) * radius;
-        const starY = centerY + Math.sin(angle) * radius;
-
-        // Check if click is near star
-        const distance = Math.sqrt((x - starX) ** 2 + (y - starY) ** 2);
-        if (distance < 25) {
+      papers.forEach(paper => {
+        const distance = Math.sqrt((x - paper.x) ** 2 + (y - paper.y) ** 2);
+        if (distance < 30) {
           setSelectedPaper(paper);
         }
       });
@@ -185,9 +100,17 @@ const ResearchGalaxy = () => {
     canvas.addEventListener('click', handleClick);
 
     return () => {
-      cancelAnimationFrame(animationFrameId);
       canvas.removeEventListener('click', handleClick);
     };
+  }, []);
+
+  // If loading takes more than 3 seconds, force show content
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setLoading(false);
+    }, 3000);
+
+    return () => clearTimeout(timeout);
   }, []);
 
   if (loading) {
@@ -195,22 +118,28 @@ const ResearchGalaxy = () => {
       <div className="flex flex-col items-center justify-center h-screen bg-black text-white">
         <div className="text-6xl mb-4 animate-bounce">🚀</div>
         <h2 className="text-2xl font-bold mb-2">Initializing Research Galaxy...</h2>
-        <p className="text-gray-400">Calibrating star charts and aligning constellations...</p>
-        <div className="mt-4 w-64 h-2 bg-gray-700 rounded-full overflow-hidden">
-          <div className="h-full bg-blue-500 animate-pulse" style={{ width: '80%' }}></div>
+        <p className="text-gray-400 mb-4">Calibrating star charts and aligning constellations...</p>
+        <div className="w-64 h-2 bg-gray-700 rounded-full">
+          <div className="h-full bg-blue-500 rounded-full animate-pulse" style={{ width: '75%' }}></div>
         </div>
+        <button 
+          onClick={() => setLoading(false)}
+          className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+        >
+          Skip Loading
+        </button>
       </div>
     );
   }
 
   return (
-    <div className="relative w-full h-full bg-black overflow-hidden">
+    <div className="relative w-full h-screen bg-black">
       <canvas 
         ref={canvasRef} 
         className="w-full h-full cursor-pointer"
       />
       
-      {/* Paper Details Panel */}
+      {/* Paper Details */}
       {selectedPaper && (
         <div className="absolute top-6 right-6 bg-gray-900/95 text-white p-6 rounded-xl max-w-md border-l-4 backdrop-blur-sm"
              style={{ borderLeftColor: selectedPaper.color }}>
@@ -223,62 +152,29 @@ const ResearchGalaxy = () => {
               ✕
             </button>
           </div>
-          
-          <div className="space-y-3">
-            <div className="text-gray-300">{selectedPaper.authors}</div>
-            <div className="flex gap-4 text-gray-400">
-              <span>📅 {selectedPaper.year}</span>
-              <span>🔬 {selectedPaper.domain.replace('_', ' ')}</span>
-            </div>
-            <div className="pt-3 border-t border-gray-700">
-              <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">
-                📖 View Research Paper
-              </button>
-            </div>
+          <div className="space-y-2">
+            <div className="text-gray-300">NASA Research Team</div>
+            <div className="text-gray-400">2024 • {selectedPaper.domain.toUpperCase()}</div>
+            <button className="w-full mt-3 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">
+              📖 Explore Research Paper
+            </button>
           </div>
         </div>
       )}
       
-      {/* Control Panel */}
+      {/* Controls */}
       <div className="absolute bottom-6 left-6 bg-gray-900/90 text-white p-4 rounded-xl backdrop-blur-sm">
-        <h4 className="font-bold text-lg mb-2 text-blue-400">🌌 Research Galaxy</h4>
-        <div className="text-sm space-y-1">
-          <div>Exploring: <strong>{samplePapers.length}</strong> NASA papers</div>
-          <div className="text-gray-400 text-xs">Click stars to explore research</div>
-        </div>
-      </div>
-      
-      {/* Legend */}
-      <div className="absolute top-6 left-6 bg-gray-900/90 text-white p-4 rounded-xl backdrop-blur-sm">
-        <h5 className="font-bold mb-3 text-blue-400">Research Domains</h5>
-        <div className="space-y-2 text-sm">
-          <div className="flex items-center">
-            <div className="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
-            Human Biology
-          </div>
-          <div className="flex items-center">
-            <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
-            Plant Biology
-          </div>
-          <div className="flex items-center">
-            <div className="w-3 h-3 rounded-full bg-blue-500 mr-2"></div>
-            Microbiology
-          </div>
-          <div className="flex items-center">
-            <div className="w-3 h-3 rounded-full bg-purple-500 mr-2"></div>
-            Radiation
-          </div>
-          <div className="flex items-center">
-            <div className="w-3 h-3 rounded-full bg-yellow-500 mr-2"></div>
-            Technology
-          </div>
-        </div>
+        <h4 className="font-bold text-blue-400">🌌 Research Galaxy</h4>
+        <p className="text-sm mt-1">Click stars to explore NASA research</p>
+        <p className="text-xs text-gray-400 mt-2">{papers.length} papers loaded</p>
       </div>
 
-      {/* Instructions */}
-      <div className="absolute bottom-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center text-white/60 pointer-events-none">
-        <p className="text-lg mb-2">✨ Click on stars to explore NASA research</p>
-        <p className="text-sm">Each star represents a space biology paper</p>
+      {/* Success Message */}
+      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
+        <div className="bg-green-600/90 text-white px-6 py-3 rounded-lg backdrop-blur-sm">
+          <p className="text-lg font-bold">✅ Research Galaxy Ready!</p>
+          <p className="text-sm">Click on the colored stars to explore papers</p>
+        </div>
       </div>
     </div>
   );
