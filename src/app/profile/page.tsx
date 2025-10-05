@@ -49,7 +49,9 @@ function ProfilePageContent() {
           if (!user) return;
           
           try {
-            const userDoc = await getDoc(doc(firestore, 'users', user.uid));
+            const userDocRef = doc(firestore, 'users', user.uid);
+            const userDoc = await getDoc(userDocRef);
+
             if (userDoc.exists()) {
               const userData = userDoc.data();
               setProfile({
@@ -61,6 +63,7 @@ function ProfilePageContent() {
                 joinedDate: userData.joinedDate
               });
             } else {
+              // If no doc, set defaults from auth user
               setProfile({
                 displayName: user.displayName || '',
                 bio: '',
