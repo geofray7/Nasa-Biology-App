@@ -8,7 +8,7 @@ import {
   addDoc,
   serverTimestamp,
 } from 'firebase/firestore';
-import { useFirestore, useUser } from '@/firebase';
+import { useFirestore, useUser, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { useMemoFirebase } from '@/firebase/provider';
 
 import {
@@ -104,48 +104,56 @@ const DNAExplorerPage = () => {
     }
 
     setIsAnalyzing(true);
-    try {
-      // Perform analysis
-      const upperSeq = analysisSequence.toUpperCase();
-      const analysis: Omit<AnalysisResult, 'space_predictions'> = {
-        sequence_length: upperSeq.length,
-        gc_content: ((upperSeq.match(/[GC]/g) || []).length / upperSeq.length * 100).toFixed(1),
-        base_counts: {
-          A: (upperSeq.match(/A/g) || []).length,
-          T: (upperSeq.match(/T/g) || []).length,
-          C: (upperSeq.match(/C/g) || []).length,
-          G: (upperSeq.match(/G/g) || []).length,
-        },
-        analysis_date: new Date(),
-      };
+    
+    // Perform analysis
+    const upperSeq = analysisSequence.toUpperCase();
+    const analysis: Omit<AnalysisResult, 'space_predictions'> = {
+      sequence_length: upperSeq.length,
+      gc_content: ((upperSeq.match(/[GC]/g) || []).length / upperSeq.length * 100).toFixed(1),
+      base_counts: {
+        A: (upperSeq.match(/A/g) || []).length,
+        T: (upperSeq.match(/T/g) || []).length,
+        C: (upperSeq.match(/C/g) || []).length,
+        G: (upperSeq.match(/G/g) || []).length,
+      },
+      analysis_date: new Date(),
+    };
 
-      // Predict space impacts
-      const space_predictions = predictSpaceImpact(analysis);
-      const fullAnalysis: AnalysisResult = { ...analysis, space_predictions };
-      setAnalysisResult(fullAnalysis);
+    // Predict space impacts
+    const space_predictions = predictSpaceImpact(analysis);
+    const fullAnalysis: AnalysisResult = { ...analysis, space_predictions };
+    setAnalysisResult(fullAnalysis);
 
-      // Save to user's analyses in Firestore
-      const analysesCollection = collection(firestore, 'users', user.uid, 'dna_analyses');
-      await addDoc(analysesCollection, {
-        userId: user.uid,
-        originalSequence: upperSeq,
-        sequenceLength: fullAnalysis.sequence_length,
-        gcContent: Number(fullAnalysis.gc_content),
-        analysisDate: serverTimestamp(),
-        results: JSON.stringify({ // Store complex object as a string
-          ...fullAnalysis,
-          analysis_date: fullAnalysis.analysis_date.toISOString(),
-        }),
-        spacePredictions: JSON.stringify(fullAnalysis.space_predictions)
+    // Save to user's analyses in Firestore
+    const analysesCollection = collection(firestore, 'users', user.uid, 'dna_analyses');
+    const analysisData = {
+      userId: user.uid,
+      originalSequence: upperSeq,
+      sequenceLength: fullAnalysis.sequence_length,
+      gcContent: Number(fullAnalysis.gc_content),
+      analysisDate: serverTimestamp(),
+      results: JSON.stringify({ // Store complex object as a string
+        ...fullAnalysis,
+        analysis_date: fullAnalysis.analysis_date.toISOString(),
+      }),
+      spacePredictions: JSON.stringify(fullAnalysis.space_predictions)
+    };
+
+    addDoc(analysesCollection, analysisData)
+      .then(() => {
+        toast({ title: 'Analysis Complete', description: 'DNA analysis has been successfully saved to your profile.' });
+      })
+      .catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+          path: analysesCollection.path,
+          operation: 'create',
+          requestResourceData: analysisData,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      })
+      .finally(() => {
+        setIsAnalyzing(false);
       });
-      
-      toast({ title: 'Analysis Complete', description: 'DNA analysis has been successfully saved to your profile.' });
-    } catch (error: any) {
-      console.error("Error analyzing DNA:", error);
-      toast({ variant: 'destructive', title: 'Analysis Failed', description: error.message || 'An unknown error occurred.' });
-    } finally {
-      setIsAnalyzing(false);
-    }
   };
   
   // Equivalent to `searchGene` Cloud Function
@@ -171,8 +179,11 @@ const DNAExplorerPage = () => {
 
       setGeneResults(results);
     } catch (error: any) {
-       console.error("Error searching gene:", error);
-       toast({ variant: 'destructive', title: 'Search Failed', description: 'Could not connect to the gene database.' });
+        const permissionError = new FirestorePermissionError({
+          path: 'genes',
+          operation: 'list',
+        });
+        errorEmitter.emit('permission-error', permissionError);
     } finally {
       setIsGeneSearching(false);
     }
@@ -430,3 +441,5 @@ const Stat = ({title, value}: {title:string, value: string|number}) => (
 );
 
 export default DNAExplorerPage;
+
+    
