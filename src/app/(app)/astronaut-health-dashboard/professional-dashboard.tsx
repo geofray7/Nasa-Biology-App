@@ -9,9 +9,6 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
 } from 'recharts';
 import {
   Card,
@@ -22,13 +19,15 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Heart, TrendingUp, Activity, Bed, Droplets } from 'lucide-react';
+import { Heart, TrendingUp, Activity, Bed, Droplets, ShieldCheck, Dumbbell, Zap, GlassWater } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
 
 const initialHealthData = {
   heartRate: 72,
   weight: 68.5,
   steps: 8542,
   sleep: 7.2,
+  waterIntake: 1800,
 };
 
 const initialChartData = [
@@ -40,16 +39,6 @@ const initialChartData = [
   { name: 'Sat', heartRate: 68, steps: 7.0 },
   { name: 'Sun', heartRate: 72, steps: 8.5 },
 ];
-
-const activityDistributionData = [
-    { name: 'Walking', value: 40 },
-    { name: 'Running', value: 25 },
-    { name: 'Cycling', value: 15 },
-    { name: 'Strength', value: 10 },
-    { name: 'Other', value: 10 },
-];
-
-const COLORS = ['#2c7be5', '#00d97e', '#39afd1', '#f6c343', '#e63757'];
 
 const ProfessionalHealthDashboard = () => {
   const [healthData, setHealthData] = useState(initialHealthData);
@@ -69,6 +58,65 @@ const ProfessionalHealthDashboard = () => {
     sleepHours: '',
     waterIntake: '',
   });
+
+  const [readinessScore, setReadinessScore] = useState({
+    current_score: 0,
+    factors: {
+      cardiovascular: 0,
+      stamina: 0,
+      recovery: 0,
+      nutrition: 0,
+    },
+    recommendations: ['Enter health data to calculate your score.'],
+  });
+
+  useEffect(() => {
+    calculateReadinessScore();
+  }, [healthData]);
+
+
+  const calculateReadinessScore = () => {
+    // Cardiovascular (30%) - lower resting heart rate is better
+    const idealHr = 60;
+    const hrScore = Math.max(0, 100 - (Math.abs(healthData.heartRate - idealHr) * 5));
+    const cardiovascular = Math.min(100, hrScore);
+
+    // Stamina (30%) - based on steps
+    const idealSteps = 10000;
+    const stamina = Math.min(100, (healthData.steps / idealSteps) * 100);
+
+    // Recovery (25%) - based on sleep
+    const idealSleep = 8;
+    const recovery = Math.min(100, (healthData.sleep / idealSleep) * 100);
+
+    // Nutrition (15%) - based on water intake
+    const idealWater = 2500;
+    const nutrition = Math.min(100, (healthData.waterIntake / idealWater) * 100);
+
+    const totalScore = 
+        (cardiovascular * 0.3) + 
+        (stamina * 0.3) +
+        (recovery * 0.25) +
+        (nutrition * 0.15);
+
+    const recommendations = [];
+    if (cardiovascular < 80) recommendations.push("Consider light cardio to improve resting heart rate.");
+    if (stamina < 75) recommendations.push("Increase daily activity to improve stamina.");
+    if (recovery < 85) recommendations.push("Aim for 8 hours of sleep for better recovery.");
+    if (nutrition < 90) recommendations.push("Increase water intake by at least 500ml daily.");
+    if (recommendations.length === 0) recommendations.push("Excellent work. All metrics are within optimal range!");
+
+    setReadinessScore({
+        current_score: Math.round(totalScore),
+        factors: {
+            cardiovascular: Math.round(cardiovascular),
+            stamina: Math.round(stamina),
+            recovery: Math.round(recovery),
+            nutrition: Math.round(nutrition),
+        },
+        recommendations,
+    });
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
@@ -102,6 +150,7 @@ const ProfessionalHealthDashboard = () => {
         newActivities.unshift({ icon: Bed, title: 'Sleep Updated', value: `${formData.sleepHours} hours`, time: 'Just now', color: 'bg-purple-500' });
     }
     if (formData.waterIntake) {
+        newHealthData.waterIntake = Number(formData.waterIntake);
         newActivities.unshift({ icon: Droplets, title: 'Water Intake', value: `${formData.waterIntake} ml`, time: 'Just now', color: 'bg-sky-500' });
     }
 
@@ -158,29 +207,28 @@ const ProfessionalHealthDashboard = () => {
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Activity Distribution</CardTitle>
+                    <CardTitle className="flex items-center gap-2">
+                        <ShieldCheck className="text-primary"/>
+                        Mission Readiness
+                    </CardTitle>
                 </CardHeader>
-                <CardContent>
-                    <ResponsiveContainer width="100%" height={300}>
-                        <PieChart>
-                            <Pie
-                                data={activityDistributionData}
-                                cx="50%"
-                                cy="50%"
-                                labelLine={false}
-                                outerRadius={80}
-                                fill="#8884d8"
-                                dataKey="value"
-                                nameKey="name"
-                                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                            >
-                                {activityDistributionData.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                ))}
-                            </Pie>
-                            <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}/>
-                        </PieChart>
-                    </ResponsiveContainer>
+                <CardContent className="space-y-4">
+                     <div className="text-center">
+                        <p className="text-5xl font-bold text-foreground">{readinessScore.current_score}%</p>
+                        <p className="text-sm text-muted-foreground">Overall Score</p>
+                    </div>
+                    <div className="space-y-3">
+                        <FactorBar icon={Heart} label="Cardiovascular" value={readinessScore.factors.cardiovascular} color="bg-red-500" />
+                        <FactorBar icon={Dumbbell} label="Stamina" value={readinessScore.factors.stamina} color="bg-green-500" />
+                        <FactorBar icon={Zap} label="Recovery" value={readinessScore.factors.recovery} color="bg-purple-500" />
+                        <FactorBar icon={GlassWater} label="Nutrition" value={readinessScore.factors.nutrition} color="bg-sky-500" />
+                    </div>
+                     <div className="pt-4 border-t border-border">
+                        <h4 className="font-semibold text-sm mb-2">Recommendations</h4>
+                        <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
+                            {readinessScore.recommendations.map((rec, i) => <li key={i}>{rec}</li>)}
+                        </ul>
+                    </div>
                 </CardContent>
             </Card>
         </div>
@@ -271,5 +319,30 @@ const StatCard = ({ icon: Icon, label, value, color, iconColor }: {icon: React.E
     </Card>
 );
 
+const FactorBar = ({ icon: Icon, label, value, color }: { icon: React.ElementType, label: string, value: number, color: string }) => (
+    <div>
+        <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center gap-2">
+                <Icon className={`size-4 ${color.replace('bg-', 'text-')}`} />
+                <span className="text-sm font-medium">{label}</span>
+            </div>
+            <span className="text-sm font-bold">{value}%</span>
+        </div>
+        <Progress value={value} indicatorClassName={color} />
+    </div>
+);
 
 export default ProfessionalHealthDashboard;
+
+// Add this to progress.tsx to allow custom colors
+// In Progress component:
+// <ProgressPrimitive.Indicator
+//   className={cn("h-full w-full flex-1 bg-primary transition-all", indicatorClassName)}
+// ...
+//
+// In Progress props:
+// React.ComponentPropsWithoutRef<typeof ProgressPrimitive.Root> & { indicatorClassName?: string }
+//
+// In Progress forwardRef:
+// ({ className, value, indicatorClassName, ...props }, ref) => (
+
